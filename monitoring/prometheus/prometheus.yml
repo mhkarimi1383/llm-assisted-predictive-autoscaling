@@ -1,0 +1,63 @@
+# Prometheus configuration for LLM-Based Intelligent Autoscaling System
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+rule_files:
+  # - "rules/*.yml"
+
+scrape_configs:
+  # Scrape the autoscaler itself
+  - job_name: 'llm-autoscaler'
+    static_configs:
+      - targets: ['llm-autoscaler:9090']
+
+  # Scrape Redis
+  - job_name: 'redis'
+    static_configs:
+      - targets: ['redis:6379']
+
+  # Scrape workload predictor (example)
+  - job_name: 'workload-predictor'
+    static_configs:
+      - targets: ['workload-predictor:8080']
+
+  # Scrape Kubernetes (if available)
+  # - job_name: 'kubernetes-pods'
+  #   kubernetes_sd_configs:
+  #     - role: pod
+  #   relabel_configs:
+  #     - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scrape]
+  #       action: keep
+  #       regex: true
+  #     - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_path]
+  #       action: replace
+  #       target_label: __metrics_path__
+  #       regex: (.+)
+  #     - source_labels: [__address__, __meta_kubernetes_pod_annotation_prometheus_io_port]
+  #       action: replace
+  #       regex: ([^:]+)(?::\d+)?;(\d+)
+  #       replacement: $1:$2
+  #       target_label: __address__
+  #     - action: labelmap
+  #       regex: __meta_kubernetes_pod_label_(.+)
+  #     - source_labels: [__meta_kubernetes_pod_namespace]
+  #       action: replace
+  #       target_label: kubernetes_namespace
+  #     - source_labels: [__meta_kubernetes_pod_name]
+  #       action: replace
+  #       target_label: kubernetes_pod_name
+
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets:
+          # - alertmanager:9093
+
+# Example recording rules for workload prediction metrics
+# recording_rules:
+#   - groups:
+#     - name: workload_predictions
+#       rules:
+#         - record: job:workload_predictions:sum
+#           expr: sum(rate(workload_predictions_total[5m])) by (job)

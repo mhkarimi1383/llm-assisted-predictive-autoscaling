@@ -1,0 +1,159 @@
+{
+  "dashboard": {
+    "id": null,
+    "title": "LLM-Based Intelligent Autoscaling System Overview",
+    "tags": ["llm", "autoscaling", "kubernetes"],
+    "timezone": "browser",
+    "schemaVersion": 38,
+    "version": 1,
+    "refresh": "10s",
+    "panels": [
+      {
+        "type": "stat",
+        "title": "System Status",
+        "gridPos": { "x": 0, "y": 0, "w": 3, "h": 3 },
+        "targets": [
+          {
+            "expr": "up{job=\"llm-autoscaler\"}",
+            "legendFormat": "{{instance}}",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "thresholds"
+            },
+            "thresholds": {
+              "steps": [
+                { "color": "green", "value": null },
+                { "color": "red", "value": 0 }
+              ]
+            }
+          }
+        }
+      },
+      {
+        "type": "graph",
+        "title": "Agent Processing Latency",
+        "gridPos": { "x": 3, "y": 0, "w": 9, "h": 4 },
+        "targets": [
+          {
+            "expr": "rate(llm_autoscaler_agent_latency_seconds_sum[5m]) / rate(llm_autoscaler_agent_latency_seconds_count[5m])",
+            "legendFormat": "{{agent}}",
+            "refId": "A"
+          }
+        ],
+        "yaxes": [
+          {
+            "format": "s",
+            "label": "Latency (seconds)",
+            "logBase": 1,
+            "min": 0
+          },
+          {
+            "format": "short",
+            "show": false
+          }
+        ]
+      },
+      {
+        "type": "graph",
+        "title": "Scaling Actions per Minute",
+        "gridPos": { "x": 0, "y": 4, "w": 6, "h": 4 },
+        "targets": [
+          {
+            "expr": "rate(llm_autoscaler_scaling_actions_total[5m])",
+            "legendFormat": "{{action_type}} {{direction}}",
+            "refId": "A"
+          }
+        ],
+        "yaxes": [
+          {
+            "format": "short",
+            "label": "Actions/min",
+            "logBase": 1,
+            "min": 0
+          },
+          {
+            "format": "short",
+            "show": false
+          }
+        ]
+      },
+      {
+        "type": "graph",
+        "title": "Resource Utilization",
+        "gridPos": { "x": 6, "y": 4, "w": 6, "h": 4 },
+        "targets": [
+          {
+            "expr": "avg(node_cpu_utilization) by (instance)",
+            "legendFormat": "CPU Usage - {{instance}}",
+            "refId": "A"
+          },
+          {
+            "expr": "avg(node_memory_utilization) by (instance)",
+            "legendFormat": "Memory Usage - {{instance}}",
+            "refId": "B"
+          }
+        ],
+        "yaxes": [
+          {
+            "format": "percent",
+            "label": "Utilization",
+            "logBase": 1,
+            "min": 0,
+            "max": 1
+          },
+          {
+            "format": "short",
+            "show": false
+          }
+        ]
+      },
+      {
+        "type": "table",
+        "title": "Recent Scaling Events",
+        "gridPos": { "x": 0, "y": 8, "w": 12, "h": 6 },
+        "targets": [
+          {
+            "expr": "llm_autoscaler_scaling_events",
+            "legendFormat": "{{event_type}}",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "custom": {}
+          },
+          "overrides": []
+        }
+      }
+    ],
+    "templating": {
+      "list": [
+        {
+          "name": "instance",
+          "type": "query",
+          "datasource": "Prometheus",
+          "query": "label_replace(up{job=\"llm-autoscaler\"}, \"instance\", \"$1\", \"instance\", \"(.*)\")",
+          "refresh": 1,
+          "includeAll": true,
+          "multi": true,
+          "allValue": ".+"
+        },
+        {
+          "name": "agent",
+          "type": "query",
+          "datasource": "Prometheus",
+          "query": "label_values(llm_autoscaler_agent_latency_seconds_count, agent)",
+          "refresh": 1,
+          "includeAll": true,
+          "multi": true,
+          "allValue": ".+"
+        }
+      ]
+    }
+  },
+  "overwrite": true
+}

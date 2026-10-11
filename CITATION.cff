@@ -1,0 +1,25 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+authors:
+  - family-names: "Karimi"
+    given-names: "Muhammed Hussain"
+    orcid: "https://orcid.org/0009-0007-3792-6420"
+    affiliation: "Payame Noor University"
+title: "LLM-Based Intelligent Autoscaling System for Kubernetes"
+version: 1.0.0
+date-released: 2026-10-11
+url: "https://github.com/mhkarimi1383/llm-assisted-predictive-autoscaling"
+keywords:
+  - "Kubernetes"
+  - "Autoscaling"
+  - "Large Language Models"
+  - "LLM"
+  - "Predictive Autoscaling"
+  - "Multi-Agent Systems"
+license: "AGPL-3.0"
+repository-code: "https://github.com/mhkarimi1383/llm-assisted-predictive-autoscaling"
+abstract: >-
+  An intelligent autoscaling system that uses Large Language Models (LLMs) as a
+  reasoning layer for Kubernetes workload prediction and cluster status to improve
+  scaling decisions. The system integrates OpenAPI-compatible LLM interfaces,
+  multi-agent reasoning, and deterministic safety policies.

@@ -1,0 +1,157 @@
+# Example configuration file for LLM-Based Intelligent Autoscaling System
+# Copy this file to config.yaml and edit as needed
+
+# LLM Service Configuration
+llm_service:
+  # OpenAPI-compatible LLM service endpoint
+  endpoint: "http://localhost:8000/v1"
+  # API key for authentication (if required)
+  api_key: "${LLM_API_KEY}"
+  # Timeout for LLM requests (in seconds)
+  timeout: 30
+  # Maximum retries for failed requests
+  max_retries: 3
+  # Models to use for different agent types
+  models:
+    forecast_analysis: "llama3-70b-8192"  # or any OpenAPI-compatible model
+    state_analysis: "llama3-70b-8192"
+    policy_analysis: "llama3-70b-8192"
+    historical_analysis: "llama3-70b-8192"
+    synthesizer: "llama3-70b-8192"
+
+# Kubernetes Configuration
+kubernetes:
+  # Kubernetes API server endpoint
+  api_server: "https://kubernetes.default.svc"
+  # Service account token path (if running in-cluster)
+  service_account_token: "/var/run/secrets/kubernetes.io/serviceaccount/token"
+  # Certificate authority data (if running in-cluster)
+  certificate_authority: "/var/run/secrets/kubernetes.io/serviceaccount/ca.crt"
+  # Namespace to watch for LLMAutoscaler CRDs
+  watch_namespace: ""
+  # Resync period for controllers (in seconds)
+  resync_period: 10
+
+# Data Acquisition Configuration
+data_acquisition:
+  # Workload prediction sources
+  workload_predictors:
+    - name: "prometheus"
+      type: "prometheus"
+      endpoint: "http://prometheus.monitoring.svc:9090"
+      query: |
+        sum(rate(http_requests_total[5m])) by (deployment, namespace)
+    - name: "custom_ml_model"
+      type: "rest"
+      endpoint: "http://workload-predictor.ml.svc:8080/predict"
+      method: "POST"
+  # Cluster status metrics sources
+  cluster_metrics:
+    - name: "prometheus"
+      type: "prometheus"
+      endpoint: "http://prometheus.monitoring.svc:9090"
+      metrics:
+        - "node_cpu_utilization"
+        - "node_memory_utilization"
+        - "pod_restart_total"
+        - "container_cpu_usage_seconds_total"
+        - "container_memory_usage_bytes"
+
+# Multi-Agent Reasoning Configuration
+multi_agent_reasoning:
+  # Communication mechanism between agents
+  communication:
+    type: "redis"  # Options: redis, rabbitmq, kafka, http
+    redis:
+      host: "redis.monitoring.svc"
+      port: 6379
+      password: "${REDIS_PASSWORD}"
+      db: 0
+  # Agent execution settings
+  execution:
+    # Timeout for agent processing (in seconds)
+    agent_timeout: 10
+    # Maximum concurrent agents
+    max_concurrent: 5
+    # Enable parallel processing
+    parallel_processing: true
+
+# Safety Policy Engine Configuration
+safety_policy:
+  # Policy evaluation settings
+  evaluation:
+    # Default action when policy evaluation fails
+    fail_safe_action: "maintain_current_state"
+    # Maximum scaling change per evaluation (as percentage of current replicas)
+    max_scaling_change_percent: 50
+    # Minimum replicas allowed
+    min_replicas: 1
+    # Maximum replicas allowed
+    max_replicas: 1000
+  # Specific safety policies
+  policies:
+    - name: "resource-exhaustion-prevention"
+      description: "Prevent scaling that would cause resource exhaustion"
+      enabled: true
+      conditions:
+        - "predicted_cpu_utilization < 0.95"
+        - "predicted_memory_utilization < 0.95"
+    - name: "stability-maintenance"
+      description: "Prevent rapid scaling oscillations"
+      enabled: true
+      conditions:
+        - "time_since_last_scaling_action > 60"  # seconds
+        - "replica_change_rate < 0.1"  # replicas per second
+
+# Scaling Executor Configuration
+scaling_executor:
+  # Kubernetes integration settings
+  kubernetes:
+    # CRD group for LLMAutoscaler
+    crd_group: "autoscaling.ai"
+    # CRD version
+    crd_version: "v1"
+    # CRD kind (plural)
+    crd_plural: "llmautoscalers"
+  # Execution settings
+  execution:
+    # Whether to actually apply scaling decisions or just log them
+    dry_run: false
+    # Maximum scaling operations per minute
+    max_ops_per_minute: 10
+    # Enable gradual scaling (step-by-step)
+    gradual_scaling: true
+    # Maximum step size for gradual scaling
+    max_step_size: 20  # percent of target
+
+# Monitoring and Observability
+monitoring:
+  # Prometheus metrics endpoint
+  prometheus:
+    enabled: true
+    port: 9090
+    path: "/metrics"
+  # Health check endpoint
+  health_check:
+    enabled: true
+    port: 8080
+    path: "/health"
+  # Logging configuration
+  logging:
+    level: "info"  # Options: debug, info, warn, error
+    format: "json"  # Options: json, text
+    # Output destinations
+    outputs:
+      - "stdout"
+      - "file:/var/log/llm-autoscaler/app.log"
+
+# Resource Limits
+resources:
+  # CPU limits for the autoscaler itself
+  cpu:
+    request: "100m"
+    limit: "500m"
+  # Memory limits
+  memory:
+    request: "128Mi"
+    limit: "512Mi"

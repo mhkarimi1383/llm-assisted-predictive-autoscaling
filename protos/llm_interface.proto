@@ -1,0 +1,58 @@
+syntax = "proto3";
+
+package llminterface;
+
+// Service for LLM interface layer
+service LLMInterfaceService {
+  // Generate text from a prompt (unary)
+  rpc GenerateText (GenerateTextRequest) returns (GenerateTextResponse);
+
+  // Generate text from a prompt with streaming response
+  rpc GenerateTextStream (GenerateTextRequest) returns (stream GenerateTextResponse);
+
+  // Get embeddings for text
+  rpc GetEmbeddings (EmbeddingsRequest) returns (EmbeddingsResponse);
+
+  // Count tokens in text
+  rpc CountTokens (TokenCountRequest) returns (TokenCountResponse);
+}
+
+// Request for text generation
+message GenerateTextRequest {
+  string prompt = 1;
+  int32 max_tokens = 2;
+  double temperature = 3;
+  double top_p = 4;
+  int32 n = 5; // Number of completions to generate
+  bool stream = 6; // If true, use streaming endpoint (though we have separate streaming method)
+}
+
+// Response for text generation
+message GenerateTextResponse {
+  string text = 1;
+  int32 token_count = 2;
+  int32 finish_reason = 3; // Enum: 0=stop, 1=length, 2=token, etc.
+}
+
+// Request for embeddings
+message EmbeddingsRequest {
+  string text = 1;
+  string model = 2; // Optional model specification
+}
+
+// Response for embeddings
+message EmbeddingsResponse {
+  repeated float embedding = 1;
+}
+
+// Request for token counting
+message TokenCountRequest {
+  string text = 1;
+  string model = 2; // Optional model specification
+}
+
+// Response for token counting
+message TokenCountResponse {
+  int32 token_count = 1;
+  repeated string tokens = 2; // Optional: list of tokens
+}

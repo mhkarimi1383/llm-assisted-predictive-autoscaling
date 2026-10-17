@@ -1,0 +1,42 @@
+syntax = "proto3";
+
+package multianalreasoning;
+
+import "google/protobuf/empty.proto";
+
+// Service for multi-agent reasoning layer
+service MultiAgentReasoningService {
+  // Perform reasoning on a given prompt
+  rpc Reason (ReasoningRequest) returns (ReasoningResponse);
+
+  // Get the current status of the reasoning component
+  rpc GetStatus (google.protobuf.Empty) returns (StatusResponse);
+}
+
+// Request for reasoning
+message ReasoningRequest {
+  string prompt = 1;
+  int32 max_tokens = 2;
+  double temperature = 3;
+  double top_p = 4;
+  int32 n = 5; // Number of completions to generate
+  bool stream = 6; // Whether to stream the response (if supported)
+  string request_id = 7; // Unique identifier for the request
+}
+
+// Response containing reasoning result
+message ReasoningResponse {
+  string text = 1;
+  int32 token_count = 2;
+  int32 finish_reason = 3; // Enum: 0=stop, 1=length, 2=token, etc.
+  string request_id = 4; // Echo back the request ID
+  repeated string reasoning_steps = 5; // Optional: steps taken in reasoning process
+}
+
+// Response for status request
+message StatusResponse {
+  bool is_healthy = 1;
+  string status_message = 2;
+  int64 timestamp = 3; // Unix timestamp
+  string version = 4; // Version of the component
+}

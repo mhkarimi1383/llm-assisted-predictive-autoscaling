@@ -1,0 +1,40 @@
+[project]
+name = "multi_agent_reasoning"
+description = "Multi Agent Reasoning Component for LLM-Based Intelligent Autoscaling System"
+authors = [
+    {name = "Muhammed Hussain Karimi", email = "mhkarimi1383@gmail.com"}
+]
+version = "0.1.0"
+readme = "README.md"
+requires-python = ">=3.8"
+license = {file = "LICENSE"}
+
+# No external dependencies currently - only uses Python standard library
+dependencies = [
+    "grpcio>=1.70.0",
+    "grpcio-tools>=1.70.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/mhkarimi1383/llm-assisted-predictive-autoscaling"
+
+[build-system]
+requires = ["setuptools>=45", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0",
+    "ruff>=0.1.0",
+]
+
+[tool.uv.sources]
+# If using private repositories or specific versions, they would be listed here
+
+[project.scripts]
+# Entry points for command-line interface
+multi-agent-reasoning = "multi_agent_reasoning.main:main"
+
+[tool.setuptools]
+# Explicitly set the package to avoid auto-discovery picking up unrelated directories
+packages = ["multi_agent_reasoning"]

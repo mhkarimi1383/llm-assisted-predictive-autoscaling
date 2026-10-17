@@ -1,0 +1,61 @@
+syntax = "proto3";
+
+package dataacquisition;
+
+// Service for data acquisition layer
+service DataAcquisitionService {
+  // Get the latest workload prediction for a given workload ID and time range
+  rpc GetWorkloadPrediction (WorkloadPredictionRequest) returns (WorkloadPredictionResponse);
+
+  // Get current cluster metrics
+  rpc GetClusterMetrics (ClusterMetricsRequest) returns (ClusterMetricsResponse);
+
+  // Subscribe to a stream of workload predictions
+  rpc SubscribeWorkloadPredictions (WorkloadPredictionSubscriptionRequest) returns (stream WorkloadPredictionResponse);
+
+  // Subscribe to a stream of cluster metrics
+  rpc SubscribeClusterMetrics (ClusterMetricsSubscriptionRequest) returns (stream ClusterMetricsResponse);
+}
+
+// Request for workload prediction
+message WorkloadPredictionRequest {
+  string workload_id = 1;
+  int64 start_time = 2; // Unix timestamp in seconds
+  int64 end_time = 3;   // Unix timestamp in seconds
+}
+
+// Response containing workload prediction
+message WorkloadPredictionResponse {
+  string workload_id = 1;
+  int64 timestamp = 2; // Unix timestamp in seconds
+  double predicted_cpu_utilization = 3; // Percentage
+  double predicted_memory_utilization = 4; // Percentage
+  double predicted_network_in = 5; // Mbps
+  double predicted_network_out = 6; // Mbps
+}
+
+// Request for cluster metrics
+message ClusterMetricsRequest {
+  // Empty request for current metrics
+}
+
+// Response containing cluster metrics
+message ClusterMetricsResponse {
+  int64 timestamp = 1; // Unix timestamp in seconds
+  double cpu_utilization = 2; // Percentage
+  double memory_utilization = 3; // Percentage
+  double disk_utilization = 4; // Percentage
+  int32 pod_count = 5;
+  int32 node_count = 6;
+}
+
+// Request for subscribing to workload predictions
+message WorkloadPredictionSubscriptionRequest {
+  repeated string workload_ids = 1;
+  int64 start_time = 2; // Optional start time for historical data
+}
+
+// Request for subscribing to cluster metrics
+message ClusterMetricsSubscriptionRequest {
+  // Empty request for subscribing to all metrics
+}

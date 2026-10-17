@@ -1,0 +1,94 @@
+syntax = "proto3";
+
+package safetypolicy;
+
+// Service for safety policy engine
+service SafetyPolicyService {
+  // Check the safety of a prompt and generated text
+  rpc CheckSafety (SafetyCheckRequest) returns (SafetyCheckResponse);
+
+  // Apply safety policy to generated text (returns safe text or error)
+  rpc ApplySafetyPolicy (SafetyApplyRequest) returns (SafetyApplyResponse);
+
+  // Get current safety policies
+  rpc GetSafetyPolicies (GetSafetyPoliciesRequest) returns (GetSafetyPoliciesResponse);
+
+  // Update safety policies (admin only)
+  rpc UpdateSafetyPolicy (UpdateSafetyPolicyRequest) returns (UpdateSafetyPolicyResponse);
+}
+
+// Request for safety check
+message SafetyCheckRequest {
+  string prompt = 1;
+  string generated_text = 2;
+}
+
+// Response for safety check
+message SafetyCheckResponse {
+  bool is_safe = 1;
+  repeated string violations = 2; // List of violated policies
+  string safe_text = 3; // If not safe, optionally provide a safe version
+  double confidence = 4; // Confidence score of the check
+}
+
+// Request for applying safety policy
+message SafetyApplyRequest {
+  string generated_text = 1;
+}
+
+// Response for applying safety policy
+message SafetyApplyResponse {
+  bool is_safe = 1;
+  string safe_text = 2; // The text after applying safety transformations
+  repeated string transformations_applied = 3; // List of transformations applied
+}
+
+// Request to get safety policies
+message GetSafetyPoliciesRequest {
+  // Empty request
+}
+
+// Response containing safety policies
+message GetSafetyPoliciesResponse {
+  repeated SafetyPolicy policies = 1;
+}
+
+// A single safety policy definition
+message SafetyPolicy {
+  string id = 1;
+  string name = 2;
+  string description = 3;
+  PolicyType type = 4; // Enum: KEYWORD, REGEX, SEMANTIC, etc.
+  string pattern = 5; // For keyword or regex
+  string semantic_check = 6; // For semantic checks, maybe a description or model reference
+  Action action = 7; // Enum: BLOCK, TRANSFORM, WARN
+  map<string, string> parameters = 8; // Additional parameters
+}
+
+// Enum for policy type
+enum PolicyType {
+  UNKNOWN = 0;
+  KEYWORD = 1;
+  REGEX = 2;
+  SEMANTIC = 3;
+}
+
+// Enum for action
+enum Action {
+  ACTION_UNSPECIFIED = 0;
+  BLOCK = 1;
+  TRANSFORM = 2;
+  WARN = 3;
+}
+
+// Request to update safety policy
+message UpdateSafetyPolicyRequest {
+  SafetyPolicy policy = 1;
+  bool update = 2; // If true, update; if false, delete (or use separate delete method)
+}
+
+// Response for updating safety policy
+message UpdateSafetyPolicyResponse {
+  bool success = 1;
+  string message = 2;
+}

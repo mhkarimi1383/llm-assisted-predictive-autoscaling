@@ -1,0 +1,100 @@
+syntax = "proto3";
+
+package scalingexecutor;
+
+// Service for scaling executor
+service ScalingExecutorService {
+  // Execute a scaling decision
+  rpc ExecuteScaling (ScalingDecision) returns (ScalingResult);
+
+  // Get the current status of a scalable resource
+  rpc GetScalingStatus (ScalingStatusRequest) returns (ScalingStatusResponse);
+
+  // Watch for scaling events (server-streaming)
+  rpc WatchScalingEvents (WatchScalingEventsRequest) returns (stream ScalingEvent);
+
+  // List all scalable resources in the cluster
+  rpc ListScalableResources (ListScalableResourcesRequest) returns (ListScalableResourcesResponse);
+}
+
+// Request for executing a scaling decision
+message ScalingDecision {
+  string resource_type = 1; // e.g., "deployment", "statefulset"
+  string resource_name = 2;
+  string namespace = 3;
+  int32 replica_count = 4; // Desired replica count
+  // Additional parameters can be added as needed
+}
+
+// Response for executing a scaling decision
+message ScalingResult {
+  bool success = 1;
+  string message = 2;
+  int64 timestamp = 3; // Unix timestamp when the action was completed
+}
+
+// Request for getting scaling status
+message ScalingStatusRequest {
+  string resource_type = 1;
+  string resource_name = 2;
+  string namespace = 3;
+}
+
+// Response for scaling status
+message ScalingStatusResponse {
+  string resource_type = 1;
+  string resource_name = 2;
+  string namespace = 3;
+  int32 current_replicas = 4;
+  int32 desired_replicas = 5;
+  int64 last_updated = 6; // Unix timestamp
+  string status = 7; // e.g., "ScalingUp", "ScalingDown", "Ready", "Failed"
+}
+
+// Request for watching scaling events
+message WatchScalingEventsRequest {
+  string namespace = 1; // Optional: if empty, watch all namespaces
+  repeated string resource_types = 2; // Optional: if empty, watch all types
+}
+
+// Scaling event message
+message ScalingEvent {
+  string resource_type = 1;
+  string resource_name = 2;
+  string namespace = 3;
+  int64 timestamp = 4; // Unix timestamp
+  EventType type = 5; // Enum: SCALING_UP_STARTED, SCALING_UP_COMPLETED, etc.
+  int32 from_replicas = 6;
+  int32 to_replicas = 7;
+  string message = 8;
+}
+
+// Enum for scaling event type
+enum EventType {
+  UNKNOWN = 0;
+  SCALING_UP_STARTED = 1;
+  SCALING_UP_COMPLETED = 2;
+  SCALING_DOWN_STARTED = 3;
+  SCALING_DOWN_COMPLETED = 4;
+  SCALING_FAILED = 5;
+}
+
+// Request for listing scalable resources
+message ListScalableResourcesRequest {
+  string namespace = 1; // Optional: if empty, list all namespaces
+}
+
+// Response for listing scalable resources
+message ListScalableResourcesResponse {
+  repeated ScalableResource resources = 1;
+}
+
+// A scalable resource (e.g., a deployment)
+message ScalableResource {
+  string resource_type = 1;
+  string resource_name = 2;
+  string namespace = 3;
+  int32 current_replicas = 4;
+  int32 min_replicas = 5; // Minimum allowed replicas (if known)
+  int32 max_replicas = 6; // Maximum allowed replicas (if known)
+}

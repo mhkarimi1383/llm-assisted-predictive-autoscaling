@@ -1,20 +1,22 @@
 # Project Documentation
 
-This directory contains all documentation for the LLM-Based Intelligent Autoscaling System.
+Start with [Algorithms and Pseudocode](ALGORITHMS.md), which describes the proposed
+decision process for the LLM-Based Intelligent Autoscaling System before further
+implementation.
 
-## Directory Structure
+The specification covers:
 
-- `architecture/` - System architecture diagrams and descriptions
-- `api/` - API specifications and documentation
-- `user-guide/` - User guides and tutorials
-- `developer-guide/` - Developer documentation and contribution guidelines
-- `operations/` - Operations and deployment guides
-- `research/` - Research papers and technical reports
+1. The autoscaling control cycle and data acquisition.
+2. Language-model requests and response validation.
+3. Parallel analysis agents, voting, and synthesis.
+4. Deterministic safety policies.
+5. Scaling execution, observation, and recovery.
+6. Metric-based fallback and evaluation against an HPA baseline.
 
-## Key Documentation Files
+Each algorithm pairs a Mermaid flowchart with language-independent pseudocode.
+Their inputs, outputs, and decision rules describe the intended behavior of the
+system.
 
-- `ARCHITECTURE.md` - High-level system architecture overview
-- `API_SPEC.md` - OpenAPI specification for LLM interfaces
-- `USER_GUIDE.md` - How to use and configure the autoscaler
-- `DEVELOPER_GUIDE.md` - How to contribute to the project
-- `OPERATIONS_GUIDE.md` - Deployment, monitoring, and maintenance procedures
+The project objectives and research scope are documented in the
+[English proposal](../PROPOSAL_EN.md) and
+[Persian proposal](../PROPOSAL_FA.md).

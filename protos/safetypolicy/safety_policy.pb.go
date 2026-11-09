@@ -21,6 +21,62 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+// Verdict of the deterministic scaling safety evaluation
+type ScalingVerdict int32
+
+const (
+	ScalingVerdict_VERDICT_UNSPECIFIED ScalingVerdict = 0
+	ScalingVerdict_VERDICT_APPROVED    ScalingVerdict = 1 // Target within all hard constraints
+	ScalingVerdict_VERDICT_CLAMPED     ScalingVerdict = 2 // Target moved to the nearest feasible integer
+	ScalingVerdict_VERDICT_HELD        ScalingVerdict = 3 // No change permitted right now (cooldown, rate, stability)
+	ScalingVerdict_VERDICT_REJECTED    ScalingVerdict = 4 // Recommendation violates a hard constraint
+)
+
+// Enum value maps for ScalingVerdict.
+var (
+	ScalingVerdict_name = map[int32]string{
+		0: "VERDICT_UNSPECIFIED",
+		1: "VERDICT_APPROVED",
+		2: "VERDICT_CLAMPED",
+		3: "VERDICT_HELD",
+		4: "VERDICT_REJECTED",
+	}
+	ScalingVerdict_value = map[string]int32{
+		"VERDICT_UNSPECIFIED": 0,
+		"VERDICT_APPROVED":    1,
+		"VERDICT_CLAMPED":     2,
+		"VERDICT_HELD":        3,
+		"VERDICT_REJECTED":    4,
+	}
+)
+
+func (x ScalingVerdict) Enum() *ScalingVerdict {
+	p := new(ScalingVerdict)
+	*p = x
+	return p
+}
+
+func (x ScalingVerdict) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (ScalingVerdict) Descriptor() protoreflect.EnumDescriptor {
+	return file_safety_policy_proto_enumTypes[0].Descriptor()
+}
+
+func (ScalingVerdict) Type() protoreflect.EnumType {
+	return &file_safety_policy_proto_enumTypes[0]
+}
+
+func (x ScalingVerdict) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use ScalingVerdict.Descriptor instead.
+func (ScalingVerdict) EnumDescriptor() ([]byte, []int) {
+	return file_safety_policy_proto_rawDescGZIP(), []int{0}
+}
+
 // Enum for policy type
 type PolicyType int32
 
@@ -58,11 +114,11 @@ func (x PolicyType) String() string {
 }
 
 func (PolicyType) Descriptor() protoreflect.EnumDescriptor {
-	return file_safety_policy_proto_enumTypes[0].Descriptor()
+	return file_safety_policy_proto_enumTypes[1].Descriptor()
 }
 
 func (PolicyType) Type() protoreflect.EnumType {
-	return &file_safety_policy_proto_enumTypes[0]
+	return &file_safety_policy_proto_enumTypes[1]
 }
 
 func (x PolicyType) Number() protoreflect.EnumNumber {
@@ -71,7 +127,7 @@ func (x PolicyType) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use PolicyType.Descriptor instead.
 func (PolicyType) EnumDescriptor() ([]byte, []int) {
-	return file_safety_policy_proto_rawDescGZIP(), []int{0}
+	return file_safety_policy_proto_rawDescGZIP(), []int{1}
 }
 
 // Enum for action
@@ -111,11 +167,11 @@ func (x Action) String() string {
 }
 
 func (Action) Descriptor() protoreflect.EnumDescriptor {
-	return file_safety_policy_proto_enumTypes[1].Descriptor()
+	return file_safety_policy_proto_enumTypes[2].Descriptor()
 }
 
 func (Action) Type() protoreflect.EnumType {
-	return &file_safety_policy_proto_enumTypes[1]
+	return &file_safety_policy_proto_enumTypes[2]
 }
 
 func (x Action) Number() protoreflect.EnumNumber {
@@ -124,7 +180,396 @@ func (x Action) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use Action.Descriptor instead.
 func (Action) EnumDescriptor() ([]byte, []int) {
+	return file_safety_policy_proto_rawDescGZIP(), []int{2}
+}
+
+// Hard constraints enforced by the safety engine, sourced from the
+// LLMAutoscaler spec by the operator
+type ScalingConstraints struct {
+	state                      protoimpl.MessageState `protogen:"open.v1"`
+	MinReplicas                int32                  `protobuf:"varint,1,opt,name=min_replicas,json=minReplicas,proto3" json:"min_replicas,omitempty"`
+	MaxReplicas                int32                  `protobuf:"varint,2,opt,name=max_replicas,json=maxReplicas,proto3" json:"max_replicas,omitempty"`
+	CooldownSeconds            int32                  `protobuf:"varint,3,opt,name=cooldown_seconds,json=cooldownSeconds,proto3" json:"cooldown_seconds,omitempty"`                                    // Minimum seconds between scaling writes
+	MaxScaleUpPercent          int32                  `protobuf:"varint,4,opt,name=max_scale_up_percent,json=maxScaleUpPercent,proto3" json:"max_scale_up_percent,omitempty"`                          // 0 = unlimited
+	MaxScaleDownPercent        int32                  `protobuf:"varint,5,opt,name=max_scale_down_percent,json=maxScaleDownPercent,proto3" json:"max_scale_down_percent,omitempty"`                    // 0 = unlimited
+	MinStepReplicas            int32                  `protobuf:"varint,8,opt,name=min_step_replicas,json=minStepReplicas,proto3" json:"min_step_replicas,omitempty"`                                  // 0 = strict floor rounding of percentage limits
+	StabilizationWindowSeconds int32                  `protobuf:"varint,6,opt,name=stabilization_window_seconds,json=stabilizationWindowSeconds,proto3" json:"stabilization_window_seconds,omitempty"` // Downscale stabilization window
+	MaxActionsPerHour          int32                  `protobuf:"varint,7,opt,name=max_actions_per_hour,json=maxActionsPerHour,proto3" json:"max_actions_per_hour,omitempty"`                          // Rate limit; 0 = unlimited
+	Healthy                    bool                   `protobuf:"varint,9,opt,name=healthy,proto3" json:"healthy,omitempty"`                                                                           // Workload fully healthy (ready covers desired, no pending/terminating)
+	QuotaMaxPods               int32                  `protobuf:"varint,10,opt,name=quota_max_pods,json=quotaMaxPods,proto3" json:"quota_max_pods,omitempty"`                                          // Namespace pods quota; 0 = unknown
+	PodRequestCpuCores         float64                `protobuf:"fixed64,11,opt,name=pod_request_cpu_cores,json=podRequestCpuCores,proto3" json:"pod_request_cpu_cores,omitempty"`                     // Declared CPU requests per pod
+	PodRequestMemoryBytes      float64                `protobuf:"fixed64,12,opt,name=pod_request_memory_bytes,json=podRequestMemoryBytes,proto3" json:"pod_request_memory_bytes,omitempty"`            // Declared memory requests per pod
+	AllocatableCpuCores        float64                `protobuf:"fixed64,13,opt,name=allocatable_cpu_cores,json=allocatableCpuCores,proto3" json:"allocatable_cpu_cores,omitempty"`                    // Eligible node allocatable CPU
+	AllocatableMemoryBytes     float64                `protobuf:"fixed64,14,opt,name=allocatable_memory_bytes,json=allocatableMemoryBytes,proto3" json:"allocatable_memory_bytes,omitempty"`           // Eligible node allocatable memory
+	unknownFields              protoimpl.UnknownFields
+	sizeCache                  protoimpl.SizeCache
+}
+
+func (x *ScalingConstraints) Reset() {
+	*x = ScalingConstraints{}
+	mi := &file_safety_policy_proto_msgTypes[0]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ScalingConstraints) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ScalingConstraints) ProtoMessage() {}
+
+func (x *ScalingConstraints) ProtoReflect() protoreflect.Message {
+	mi := &file_safety_policy_proto_msgTypes[0]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ScalingConstraints.ProtoReflect.Descriptor instead.
+func (*ScalingConstraints) Descriptor() ([]byte, []int) {
+	return file_safety_policy_proto_rawDescGZIP(), []int{0}
+}
+
+func (x *ScalingConstraints) GetMinReplicas() int32 {
+	if x != nil {
+		return x.MinReplicas
+	}
+	return 0
+}
+
+func (x *ScalingConstraints) GetMaxReplicas() int32 {
+	if x != nil {
+		return x.MaxReplicas
+	}
+	return 0
+}
+
+func (x *ScalingConstraints) GetCooldownSeconds() int32 {
+	if x != nil {
+		return x.CooldownSeconds
+	}
+	return 0
+}
+
+func (x *ScalingConstraints) GetMaxScaleUpPercent() int32 {
+	if x != nil {
+		return x.MaxScaleUpPercent
+	}
+	return 0
+}
+
+func (x *ScalingConstraints) GetMaxScaleDownPercent() int32 {
+	if x != nil {
+		return x.MaxScaleDownPercent
+	}
+	return 0
+}
+
+func (x *ScalingConstraints) GetMinStepReplicas() int32 {
+	if x != nil {
+		return x.MinStepReplicas
+	}
+	return 0
+}
+
+func (x *ScalingConstraints) GetStabilizationWindowSeconds() int32 {
+	if x != nil {
+		return x.StabilizationWindowSeconds
+	}
+	return 0
+}
+
+func (x *ScalingConstraints) GetMaxActionsPerHour() int32 {
+	if x != nil {
+		return x.MaxActionsPerHour
+	}
+	return 0
+}
+
+func (x *ScalingConstraints) GetHealthy() bool {
+	if x != nil {
+		return x.Healthy
+	}
+	return false
+}
+
+func (x *ScalingConstraints) GetQuotaMaxPods() int32 {
+	if x != nil {
+		return x.QuotaMaxPods
+	}
+	return 0
+}
+
+func (x *ScalingConstraints) GetPodRequestCpuCores() float64 {
+	if x != nil {
+		return x.PodRequestCpuCores
+	}
+	return 0
+}
+
+func (x *ScalingConstraints) GetPodRequestMemoryBytes() float64 {
+	if x != nil {
+		return x.PodRequestMemoryBytes
+	}
+	return 0
+}
+
+func (x *ScalingConstraints) GetAllocatableCpuCores() float64 {
+	if x != nil {
+		return x.AllocatableCpuCores
+	}
+	return 0
+}
+
+func (x *ScalingConstraints) GetAllocatableMemoryBytes() float64 {
+	if x != nil {
+		return x.AllocatableMemoryBytes
+	}
+	return 0
+}
+
+// One recorded scaling action consumed by temporal checks
+type ScalingActionRecord struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Timestamp     int64                  `protobuf:"varint,1,opt,name=timestamp,proto3" json:"timestamp,omitempty"` // Unix timestamp in seconds
+	Action        string                 `protobuf:"bytes,2,opt,name=action,proto3" json:"action,omitempty"`        // SCALE_UP, SCALE_DOWN, or HOLD
+	FromReplicas  int32                  `protobuf:"varint,3,opt,name=from_replicas,json=fromReplicas,proto3" json:"from_replicas,omitempty"`
+	ToReplicas    int32                  `protobuf:"varint,4,opt,name=to_replicas,json=toReplicas,proto3" json:"to_replicas,omitempty"`
+	DryRun        bool                   `protobuf:"varint,5,opt,name=dry_run,json=dryRun,proto3" json:"dry_run,omitempty"` // Dry-run records do not consume cooldown or rate budget
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ScalingActionRecord) Reset() {
+	*x = ScalingActionRecord{}
+	mi := &file_safety_policy_proto_msgTypes[1]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ScalingActionRecord) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ScalingActionRecord) ProtoMessage() {}
+
+func (x *ScalingActionRecord) ProtoReflect() protoreflect.Message {
+	mi := &file_safety_policy_proto_msgTypes[1]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ScalingActionRecord.ProtoReflect.Descriptor instead.
+func (*ScalingActionRecord) Descriptor() ([]byte, []int) {
 	return file_safety_policy_proto_rawDescGZIP(), []int{1}
+}
+
+func (x *ScalingActionRecord) GetTimestamp() int64 {
+	if x != nil {
+		return x.Timestamp
+	}
+	return 0
+}
+
+func (x *ScalingActionRecord) GetAction() string {
+	if x != nil {
+		return x.Action
+	}
+	return ""
+}
+
+func (x *ScalingActionRecord) GetFromReplicas() int32 {
+	if x != nil {
+		return x.FromReplicas
+	}
+	return 0
+}
+
+func (x *ScalingActionRecord) GetToReplicas() int32 {
+	if x != nil {
+		return x.ToReplicas
+	}
+	return 0
+}
+
+func (x *ScalingActionRecord) GetDryRun() bool {
+	if x != nil {
+		return x.DryRun
+	}
+	return false
+}
+
+// Request for deterministic scaling safety evaluation
+type EvaluateScalingRequest struct {
+	state           protoimpl.MessageState `protogen:"open.v1"`
+	RequestId       string                 `protobuf:"bytes,1,opt,name=request_id,json=requestId,proto3" json:"request_id,omitempty"`
+	Action          string                 `protobuf:"bytes,2,opt,name=action,proto3" json:"action,omitempty"`                                           // SCALE_UP, SCALE_DOWN, or HOLD
+	CurrentReplicas int32                  `protobuf:"varint,3,opt,name=current_replicas,json=currentReplicas,proto3" json:"current_replicas,omitempty"` // Observed desired replica count
+	ProposedTarget  int32                  `protobuf:"varint,4,opt,name=proposed_target,json=proposedTarget,proto3" json:"proposed_target,omitempty"`    // Recommendation target
+	Constraints     *ScalingConstraints    `protobuf:"bytes,5,opt,name=constraints,proto3" json:"constraints,omitempty"`
+	RecentActions   []*ScalingActionRecord `protobuf:"bytes,6,rep,name=recent_actions,json=recentActions,proto3" json:"recent_actions,omitempty"` // Scaling history, oldest first
+	Now             int64                  `protobuf:"varint,7,opt,name=now,proto3" json:"now,omitempty"`                                         // Unix timestamp in seconds at evaluation time
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
+}
+
+func (x *EvaluateScalingRequest) Reset() {
+	*x = EvaluateScalingRequest{}
+	mi := &file_safety_policy_proto_msgTypes[2]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *EvaluateScalingRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*EvaluateScalingRequest) ProtoMessage() {}
+
+func (x *EvaluateScalingRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_safety_policy_proto_msgTypes[2]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use EvaluateScalingRequest.ProtoReflect.Descriptor instead.
+func (*EvaluateScalingRequest) Descriptor() ([]byte, []int) {
+	return file_safety_policy_proto_rawDescGZIP(), []int{2}
+}
+
+func (x *EvaluateScalingRequest) GetRequestId() string {
+	if x != nil {
+		return x.RequestId
+	}
+	return ""
+}
+
+func (x *EvaluateScalingRequest) GetAction() string {
+	if x != nil {
+		return x.Action
+	}
+	return ""
+}
+
+func (x *EvaluateScalingRequest) GetCurrentReplicas() int32 {
+	if x != nil {
+		return x.CurrentReplicas
+	}
+	return 0
+}
+
+func (x *EvaluateScalingRequest) GetProposedTarget() int32 {
+	if x != nil {
+		return x.ProposedTarget
+	}
+	return 0
+}
+
+func (x *EvaluateScalingRequest) GetConstraints() *ScalingConstraints {
+	if x != nil {
+		return x.Constraints
+	}
+	return nil
+}
+
+func (x *EvaluateScalingRequest) GetRecentActions() []*ScalingActionRecord {
+	if x != nil {
+		return x.RecentActions
+	}
+	return nil
+}
+
+func (x *EvaluateScalingRequest) GetNow() int64 {
+	if x != nil {
+		return x.Now
+	}
+	return 0
+}
+
+// Verdict response bound to the checked target and reasons
+type ScalingVerdictResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Verdict       ScalingVerdict         `protobuf:"varint,1,opt,name=verdict,proto3,enum=safetypolicy.ScalingVerdict" json:"verdict,omitempty"`
+	CheckedTarget int32                  `protobuf:"varint,2,opt,name=checked_target,json=checkedTarget,proto3" json:"checked_target,omitempty"` // Final target after clamping
+	Reasons       []string               `protobuf:"bytes,3,rep,name=reasons,proto3" json:"reasons,omitempty"`                                   // Blocking, clamping, or approval reasons
+	PolicyChecks  []string               `protobuf:"bytes,4,rep,name=policy_checks,json=policyChecks,proto3" json:"policy_checks,omitempty"`     // Per-check audit lines, e.g. "cooldown: pass"
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ScalingVerdictResponse) Reset() {
+	*x = ScalingVerdictResponse{}
+	mi := &file_safety_policy_proto_msgTypes[3]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ScalingVerdictResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ScalingVerdictResponse) ProtoMessage() {}
+
+func (x *ScalingVerdictResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_safety_policy_proto_msgTypes[3]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ScalingVerdictResponse.ProtoReflect.Descriptor instead.
+func (*ScalingVerdictResponse) Descriptor() ([]byte, []int) {
+	return file_safety_policy_proto_rawDescGZIP(), []int{3}
+}
+
+func (x *ScalingVerdictResponse) GetVerdict() ScalingVerdict {
+	if x != nil {
+		return x.Verdict
+	}
+	return ScalingVerdict_VERDICT_UNSPECIFIED
+}
+
+func (x *ScalingVerdictResponse) GetCheckedTarget() int32 {
+	if x != nil {
+		return x.CheckedTarget
+	}
+	return 0
+}
+
+func (x *ScalingVerdictResponse) GetReasons() []string {
+	if x != nil {
+		return x.Reasons
+	}
+	return nil
+}
+
+func (x *ScalingVerdictResponse) GetPolicyChecks() []string {
+	if x != nil {
+		return x.PolicyChecks
+	}
+	return nil
 }
 
 // Request for safety check
@@ -138,7 +583,7 @@ type SafetyCheckRequest struct {
 
 func (x *SafetyCheckRequest) Reset() {
 	*x = SafetyCheckRequest{}
-	mi := &file_safety_policy_proto_msgTypes[0]
+	mi := &file_safety_policy_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -150,7 +595,7 @@ func (x *SafetyCheckRequest) String() string {
 func (*SafetyCheckRequest) ProtoMessage() {}
 
 func (x *SafetyCheckRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_safety_policy_proto_msgTypes[0]
+	mi := &file_safety_policy_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -163,7 +608,7 @@ func (x *SafetyCheckRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SafetyCheckRequest.ProtoReflect.Descriptor instead.
 func (*SafetyCheckRequest) Descriptor() ([]byte, []int) {
-	return file_safety_policy_proto_rawDescGZIP(), []int{0}
+	return file_safety_policy_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *SafetyCheckRequest) GetPrompt() string {
@@ -193,7 +638,7 @@ type SafetyCheckResponse struct {
 
 func (x *SafetyCheckResponse) Reset() {
 	*x = SafetyCheckResponse{}
-	mi := &file_safety_policy_proto_msgTypes[1]
+	mi := &file_safety_policy_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -205,7 +650,7 @@ func (x *SafetyCheckResponse) String() string {
 func (*SafetyCheckResponse) ProtoMessage() {}
 
 func (x *SafetyCheckResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_safety_policy_proto_msgTypes[1]
+	mi := &file_safety_policy_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -218,7 +663,7 @@ func (x *SafetyCheckResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SafetyCheckResponse.ProtoReflect.Descriptor instead.
 func (*SafetyCheckResponse) Descriptor() ([]byte, []int) {
-	return file_safety_policy_proto_rawDescGZIP(), []int{1}
+	return file_safety_policy_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *SafetyCheckResponse) GetIsSafe() bool {
@@ -259,7 +704,7 @@ type SafetyApplyRequest struct {
 
 func (x *SafetyApplyRequest) Reset() {
 	*x = SafetyApplyRequest{}
-	mi := &file_safety_policy_proto_msgTypes[2]
+	mi := &file_safety_policy_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -271,7 +716,7 @@ func (x *SafetyApplyRequest) String() string {
 func (*SafetyApplyRequest) ProtoMessage() {}
 
 func (x *SafetyApplyRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_safety_policy_proto_msgTypes[2]
+	mi := &file_safety_policy_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -284,7 +729,7 @@ func (x *SafetyApplyRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SafetyApplyRequest.ProtoReflect.Descriptor instead.
 func (*SafetyApplyRequest) Descriptor() ([]byte, []int) {
-	return file_safety_policy_proto_rawDescGZIP(), []int{2}
+	return file_safety_policy_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *SafetyApplyRequest) GetGeneratedText() string {
@@ -306,7 +751,7 @@ type SafetyApplyResponse struct {
 
 func (x *SafetyApplyResponse) Reset() {
 	*x = SafetyApplyResponse{}
-	mi := &file_safety_policy_proto_msgTypes[3]
+	mi := &file_safety_policy_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -318,7 +763,7 @@ func (x *SafetyApplyResponse) String() string {
 func (*SafetyApplyResponse) ProtoMessage() {}
 
 func (x *SafetyApplyResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_safety_policy_proto_msgTypes[3]
+	mi := &file_safety_policy_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -331,7 +776,7 @@ func (x *SafetyApplyResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SafetyApplyResponse.ProtoReflect.Descriptor instead.
 func (*SafetyApplyResponse) Descriptor() ([]byte, []int) {
-	return file_safety_policy_proto_rawDescGZIP(), []int{3}
+	return file_safety_policy_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *SafetyApplyResponse) GetIsSafe() bool {
@@ -364,7 +809,7 @@ type GetSafetyPoliciesRequest struct {
 
 func (x *GetSafetyPoliciesRequest) Reset() {
 	*x = GetSafetyPoliciesRequest{}
-	mi := &file_safety_policy_proto_msgTypes[4]
+	mi := &file_safety_policy_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -376,7 +821,7 @@ func (x *GetSafetyPoliciesRequest) String() string {
 func (*GetSafetyPoliciesRequest) ProtoMessage() {}
 
 func (x *GetSafetyPoliciesRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_safety_policy_proto_msgTypes[4]
+	mi := &file_safety_policy_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -389,7 +834,7 @@ func (x *GetSafetyPoliciesRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetSafetyPoliciesRequest.ProtoReflect.Descriptor instead.
 func (*GetSafetyPoliciesRequest) Descriptor() ([]byte, []int) {
-	return file_safety_policy_proto_rawDescGZIP(), []int{4}
+	return file_safety_policy_proto_rawDescGZIP(), []int{8}
 }
 
 // Response containing safety policies
@@ -402,7 +847,7 @@ type GetSafetyPoliciesResponse struct {
 
 func (x *GetSafetyPoliciesResponse) Reset() {
 	*x = GetSafetyPoliciesResponse{}
-	mi := &file_safety_policy_proto_msgTypes[5]
+	mi := &file_safety_policy_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -414,7 +859,7 @@ func (x *GetSafetyPoliciesResponse) String() string {
 func (*GetSafetyPoliciesResponse) ProtoMessage() {}
 
 func (x *GetSafetyPoliciesResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_safety_policy_proto_msgTypes[5]
+	mi := &file_safety_policy_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -427,7 +872,7 @@ func (x *GetSafetyPoliciesResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetSafetyPoliciesResponse.ProtoReflect.Descriptor instead.
 func (*GetSafetyPoliciesResponse) Descriptor() ([]byte, []int) {
-	return file_safety_policy_proto_rawDescGZIP(), []int{5}
+	return file_safety_policy_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *GetSafetyPoliciesResponse) GetPolicies() []*SafetyPolicy {
@@ -454,7 +899,7 @@ type SafetyPolicy struct {
 
 func (x *SafetyPolicy) Reset() {
 	*x = SafetyPolicy{}
-	mi := &file_safety_policy_proto_msgTypes[6]
+	mi := &file_safety_policy_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -466,7 +911,7 @@ func (x *SafetyPolicy) String() string {
 func (*SafetyPolicy) ProtoMessage() {}
 
 func (x *SafetyPolicy) ProtoReflect() protoreflect.Message {
-	mi := &file_safety_policy_proto_msgTypes[6]
+	mi := &file_safety_policy_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -479,7 +924,7 @@ func (x *SafetyPolicy) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SafetyPolicy.ProtoReflect.Descriptor instead.
 func (*SafetyPolicy) Descriptor() ([]byte, []int) {
-	return file_safety_policy_proto_rawDescGZIP(), []int{6}
+	return file_safety_policy_proto_rawDescGZIP(), []int{10}
 }
 
 func (x *SafetyPolicy) GetId() string {
@@ -549,7 +994,7 @@ type UpdateSafetyPolicyRequest struct {
 
 func (x *UpdateSafetyPolicyRequest) Reset() {
 	*x = UpdateSafetyPolicyRequest{}
-	mi := &file_safety_policy_proto_msgTypes[7]
+	mi := &file_safety_policy_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -561,7 +1006,7 @@ func (x *UpdateSafetyPolicyRequest) String() string {
 func (*UpdateSafetyPolicyRequest) ProtoMessage() {}
 
 func (x *UpdateSafetyPolicyRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_safety_policy_proto_msgTypes[7]
+	mi := &file_safety_policy_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -574,7 +1019,7 @@ func (x *UpdateSafetyPolicyRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UpdateSafetyPolicyRequest.ProtoReflect.Descriptor instead.
 func (*UpdateSafetyPolicyRequest) Descriptor() ([]byte, []int) {
-	return file_safety_policy_proto_rawDescGZIP(), []int{7}
+	return file_safety_policy_proto_rawDescGZIP(), []int{11}
 }
 
 func (x *UpdateSafetyPolicyRequest) GetPolicy() *SafetyPolicy {
@@ -602,7 +1047,7 @@ type UpdateSafetyPolicyResponse struct {
 
 func (x *UpdateSafetyPolicyResponse) Reset() {
 	*x = UpdateSafetyPolicyResponse{}
-	mi := &file_safety_policy_proto_msgTypes[8]
+	mi := &file_safety_policy_proto_msgTypes[12]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -614,7 +1059,7 @@ func (x *UpdateSafetyPolicyResponse) String() string {
 func (*UpdateSafetyPolicyResponse) ProtoMessage() {}
 
 func (x *UpdateSafetyPolicyResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_safety_policy_proto_msgTypes[8]
+	mi := &file_safety_policy_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -627,7 +1072,7 @@ func (x *UpdateSafetyPolicyResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UpdateSafetyPolicyResponse.ProtoReflect.Descriptor instead.
 func (*UpdateSafetyPolicyResponse) Descriptor() ([]byte, []int) {
-	return file_safety_policy_proto_rawDescGZIP(), []int{8}
+	return file_safety_policy_proto_rawDescGZIP(), []int{12}
 }
 
 func (x *UpdateSafetyPolicyResponse) GetSuccess() bool {
@@ -648,7 +1093,44 @@ var File_safety_policy_proto protoreflect.FileDescriptor
 
 const file_safety_policy_proto_rawDesc = "" +
 	"\n" +
-	"\x13safety_policy.proto\x12\fsafetypolicy\"S\n" +
+	"\x13safety_policy.proto\x12\fsafetypolicy\"\xa4\x05\n" +
+	"\x12ScalingConstraints\x12!\n" +
+	"\fmin_replicas\x18\x01 \x01(\x05R\vminReplicas\x12!\n" +
+	"\fmax_replicas\x18\x02 \x01(\x05R\vmaxReplicas\x12)\n" +
+	"\x10cooldown_seconds\x18\x03 \x01(\x05R\x0fcooldownSeconds\x12/\n" +
+	"\x14max_scale_up_percent\x18\x04 \x01(\x05R\x11maxScaleUpPercent\x123\n" +
+	"\x16max_scale_down_percent\x18\x05 \x01(\x05R\x13maxScaleDownPercent\x12*\n" +
+	"\x11min_step_replicas\x18\b \x01(\x05R\x0fminStepReplicas\x12@\n" +
+	"\x1cstabilization_window_seconds\x18\x06 \x01(\x05R\x1astabilizationWindowSeconds\x12/\n" +
+	"\x14max_actions_per_hour\x18\a \x01(\x05R\x11maxActionsPerHour\x12\x18\n" +
+	"\ahealthy\x18\t \x01(\bR\ahealthy\x12$\n" +
+	"\x0equota_max_pods\x18\n" +
+	" \x01(\x05R\fquotaMaxPods\x121\n" +
+	"\x15pod_request_cpu_cores\x18\v \x01(\x01R\x12podRequestCpuCores\x127\n" +
+	"\x18pod_request_memory_bytes\x18\f \x01(\x01R\x15podRequestMemoryBytes\x122\n" +
+	"\x15allocatable_cpu_cores\x18\r \x01(\x01R\x13allocatableCpuCores\x128\n" +
+	"\x18allocatable_memory_bytes\x18\x0e \x01(\x01R\x16allocatableMemoryBytes\"\xaa\x01\n" +
+	"\x13ScalingActionRecord\x12\x1c\n" +
+	"\ttimestamp\x18\x01 \x01(\x03R\ttimestamp\x12\x16\n" +
+	"\x06action\x18\x02 \x01(\tR\x06action\x12#\n" +
+	"\rfrom_replicas\x18\x03 \x01(\x05R\ffromReplicas\x12\x1f\n" +
+	"\vto_replicas\x18\x04 \x01(\x05R\n" +
+	"toReplicas\x12\x17\n" +
+	"\adry_run\x18\x05 \x01(\bR\x06dryRun\"\xc3\x02\n" +
+	"\x16EvaluateScalingRequest\x12\x1d\n" +
+	"\n" +
+	"request_id\x18\x01 \x01(\tR\trequestId\x12\x16\n" +
+	"\x06action\x18\x02 \x01(\tR\x06action\x12)\n" +
+	"\x10current_replicas\x18\x03 \x01(\x05R\x0fcurrentReplicas\x12'\n" +
+	"\x0fproposed_target\x18\x04 \x01(\x05R\x0eproposedTarget\x12B\n" +
+	"\vconstraints\x18\x05 \x01(\v2 .safetypolicy.ScalingConstraintsR\vconstraints\x12H\n" +
+	"\x0erecent_actions\x18\x06 \x03(\v2!.safetypolicy.ScalingActionRecordR\rrecentActions\x12\x10\n" +
+	"\x03now\x18\a \x01(\x03R\x03now\"\xb6\x01\n" +
+	"\x16ScalingVerdictResponse\x126\n" +
+	"\averdict\x18\x01 \x01(\x0e2\x1c.safetypolicy.ScalingVerdictR\averdict\x12%\n" +
+	"\x0echecked_target\x18\x02 \x01(\x05R\rcheckedTarget\x12\x18\n" +
+	"\areasons\x18\x03 \x03(\tR\areasons\x12#\n" +
+	"\rpolicy_checks\x18\x04 \x03(\tR\fpolicyChecks\"S\n" +
 	"\x12SafetyCheckRequest\x12\x16\n" +
 	"\x06prompt\x18\x01 \x01(\tR\x06prompt\x12%\n" +
 	"\x0egenerated_text\x18\x02 \x01(\tR\rgeneratedText\"\x8b\x01\n" +
@@ -689,7 +1171,13 @@ const file_safety_policy_proto_rawDesc = "" +
 	"\x06update\x18\x02 \x01(\bR\x06update\"P\n" +
 	"\x1aUpdateSafetyPolicyResponse\x12\x18\n" +
 	"\asuccess\x18\x01 \x01(\bR\asuccess\x12\x18\n" +
-	"\amessage\x18\x02 \x01(\tR\amessage*?\n" +
+	"\amessage\x18\x02 \x01(\tR\amessage*|\n" +
+	"\x0eScalingVerdict\x12\x17\n" +
+	"\x13VERDICT_UNSPECIFIED\x10\x00\x12\x14\n" +
+	"\x10VERDICT_APPROVED\x10\x01\x12\x13\n" +
+	"\x0fVERDICT_CLAMPED\x10\x02\x12\x10\n" +
+	"\fVERDICT_HELD\x10\x03\x12\x14\n" +
+	"\x10VERDICT_REJECTED\x10\x04*?\n" +
 	"\n" +
 	"PolicyType\x12\v\n" +
 	"\aUNKNOWN\x10\x00\x12\v\n" +
@@ -700,12 +1188,13 @@ const file_safety_policy_proto_rawDesc = "" +
 	"\x12ACTION_UNSPECIFIED\x10\x00\x12\t\n" +
 	"\x05BLOCK\x10\x01\x12\r\n" +
 	"\tTRANSFORM\x10\x02\x12\b\n" +
-	"\x04WARN\x10\x032\x92\x03\n" +
+	"\x04WARN\x10\x032\xf1\x03\n" +
 	"\x13SafetyPolicyService\x12R\n" +
 	"\vCheckSafety\x12 .safetypolicy.SafetyCheckRequest\x1a!.safetypolicy.SafetyCheckResponse\x12X\n" +
 	"\x11ApplySafetyPolicy\x12 .safetypolicy.SafetyApplyRequest\x1a!.safetypolicy.SafetyApplyResponse\x12d\n" +
 	"\x11GetSafetyPolicies\x12&.safetypolicy.GetSafetyPoliciesRequest\x1a'.safetypolicy.GetSafetyPoliciesResponse\x12g\n" +
-	"\x12UpdateSafetyPolicy\x12'.safetypolicy.UpdateSafetyPolicyRequest\x1a(.safetypolicy.UpdateSafetyPolicyResponseb\x06proto3"
+	"\x12UpdateSafetyPolicy\x12'.safetypolicy.UpdateSafetyPolicyRequest\x1a(.safetypolicy.UpdateSafetyPolicyResponse\x12]\n" +
+	"\x0fEvaluateScaling\x12$.safetypolicy.EvaluateScalingRequest\x1a$.safetypolicy.ScalingVerdictResponseb\x06proto3"
 
 var (
 	file_safety_policy_proto_rawDescOnce sync.Once
@@ -719,41 +1208,51 @@ func file_safety_policy_proto_rawDescGZIP() []byte {
 	return file_safety_policy_proto_rawDescData
 }
 
-var file_safety_policy_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
-var file_safety_policy_proto_msgTypes = make([]protoimpl.MessageInfo, 10)
+var file_safety_policy_proto_enumTypes = make([]protoimpl.EnumInfo, 3)
+var file_safety_policy_proto_msgTypes = make([]protoimpl.MessageInfo, 14)
 var file_safety_policy_proto_goTypes = []any{
-	(PolicyType)(0),                    // 0: safetypolicy.PolicyType
-	(Action)(0),                        // 1: safetypolicy.Action
-	(*SafetyCheckRequest)(nil),         // 2: safetypolicy.SafetyCheckRequest
-	(*SafetyCheckResponse)(nil),        // 3: safetypolicy.SafetyCheckResponse
-	(*SafetyApplyRequest)(nil),         // 4: safetypolicy.SafetyApplyRequest
-	(*SafetyApplyResponse)(nil),        // 5: safetypolicy.SafetyApplyResponse
-	(*GetSafetyPoliciesRequest)(nil),   // 6: safetypolicy.GetSafetyPoliciesRequest
-	(*GetSafetyPoliciesResponse)(nil),  // 7: safetypolicy.GetSafetyPoliciesResponse
-	(*SafetyPolicy)(nil),               // 8: safetypolicy.SafetyPolicy
-	(*UpdateSafetyPolicyRequest)(nil),  // 9: safetypolicy.UpdateSafetyPolicyRequest
-	(*UpdateSafetyPolicyResponse)(nil), // 10: safetypolicy.UpdateSafetyPolicyResponse
-	nil,                                // 11: safetypolicy.SafetyPolicy.ParametersEntry
+	(ScalingVerdict)(0),                // 0: safetypolicy.ScalingVerdict
+	(PolicyType)(0),                    // 1: safetypolicy.PolicyType
+	(Action)(0),                        // 2: safetypolicy.Action
+	(*ScalingConstraints)(nil),         // 3: safetypolicy.ScalingConstraints
+	(*ScalingActionRecord)(nil),        // 4: safetypolicy.ScalingActionRecord
+	(*EvaluateScalingRequest)(nil),     // 5: safetypolicy.EvaluateScalingRequest
+	(*ScalingVerdictResponse)(nil),     // 6: safetypolicy.ScalingVerdictResponse
+	(*SafetyCheckRequest)(nil),         // 7: safetypolicy.SafetyCheckRequest
+	(*SafetyCheckResponse)(nil),        // 8: safetypolicy.SafetyCheckResponse
+	(*SafetyApplyRequest)(nil),         // 9: safetypolicy.SafetyApplyRequest
+	(*SafetyApplyResponse)(nil),        // 10: safetypolicy.SafetyApplyResponse
+	(*GetSafetyPoliciesRequest)(nil),   // 11: safetypolicy.GetSafetyPoliciesRequest
+	(*GetSafetyPoliciesResponse)(nil),  // 12: safetypolicy.GetSafetyPoliciesResponse
+	(*SafetyPolicy)(nil),               // 13: safetypolicy.SafetyPolicy
+	(*UpdateSafetyPolicyRequest)(nil),  // 14: safetypolicy.UpdateSafetyPolicyRequest
+	(*UpdateSafetyPolicyResponse)(nil), // 15: safetypolicy.UpdateSafetyPolicyResponse
+	nil,                                // 16: safetypolicy.SafetyPolicy.ParametersEntry
 }
 var file_safety_policy_proto_depIdxs = []int32{
-	8,  // 0: safetypolicy.GetSafetyPoliciesResponse.policies:type_name -> safetypolicy.SafetyPolicy
-	0,  // 1: safetypolicy.SafetyPolicy.type:type_name -> safetypolicy.PolicyType
-	1,  // 2: safetypolicy.SafetyPolicy.action:type_name -> safetypolicy.Action
-	11, // 3: safetypolicy.SafetyPolicy.parameters:type_name -> safetypolicy.SafetyPolicy.ParametersEntry
-	8,  // 4: safetypolicy.UpdateSafetyPolicyRequest.policy:type_name -> safetypolicy.SafetyPolicy
-	2,  // 5: safetypolicy.SafetyPolicyService.CheckSafety:input_type -> safetypolicy.SafetyCheckRequest
-	4,  // 6: safetypolicy.SafetyPolicyService.ApplySafetyPolicy:input_type -> safetypolicy.SafetyApplyRequest
-	6,  // 7: safetypolicy.SafetyPolicyService.GetSafetyPolicies:input_type -> safetypolicy.GetSafetyPoliciesRequest
-	9,  // 8: safetypolicy.SafetyPolicyService.UpdateSafetyPolicy:input_type -> safetypolicy.UpdateSafetyPolicyRequest
-	3,  // 9: safetypolicy.SafetyPolicyService.CheckSafety:output_type -> safetypolicy.SafetyCheckResponse
-	5,  // 10: safetypolicy.SafetyPolicyService.ApplySafetyPolicy:output_type -> safetypolicy.SafetyApplyResponse
-	7,  // 11: safetypolicy.SafetyPolicyService.GetSafetyPolicies:output_type -> safetypolicy.GetSafetyPoliciesResponse
-	10, // 12: safetypolicy.SafetyPolicyService.UpdateSafetyPolicy:output_type -> safetypolicy.UpdateSafetyPolicyResponse
-	9,  // [9:13] is the sub-list for method output_type
-	5,  // [5:9] is the sub-list for method input_type
-	5,  // [5:5] is the sub-list for extension type_name
-	5,  // [5:5] is the sub-list for extension extendee
-	0,  // [0:5] is the sub-list for field type_name
+	3,  // 0: safetypolicy.EvaluateScalingRequest.constraints:type_name -> safetypolicy.ScalingConstraints
+	4,  // 1: safetypolicy.EvaluateScalingRequest.recent_actions:type_name -> safetypolicy.ScalingActionRecord
+	0,  // 2: safetypolicy.ScalingVerdictResponse.verdict:type_name -> safetypolicy.ScalingVerdict
+	13, // 3: safetypolicy.GetSafetyPoliciesResponse.policies:type_name -> safetypolicy.SafetyPolicy
+	1,  // 4: safetypolicy.SafetyPolicy.type:type_name -> safetypolicy.PolicyType
+	2,  // 5: safetypolicy.SafetyPolicy.action:type_name -> safetypolicy.Action
+	16, // 6: safetypolicy.SafetyPolicy.parameters:type_name -> safetypolicy.SafetyPolicy.ParametersEntry
+	13, // 7: safetypolicy.UpdateSafetyPolicyRequest.policy:type_name -> safetypolicy.SafetyPolicy
+	7,  // 8: safetypolicy.SafetyPolicyService.CheckSafety:input_type -> safetypolicy.SafetyCheckRequest
+	9,  // 9: safetypolicy.SafetyPolicyService.ApplySafetyPolicy:input_type -> safetypolicy.SafetyApplyRequest
+	11, // 10: safetypolicy.SafetyPolicyService.GetSafetyPolicies:input_type -> safetypolicy.GetSafetyPoliciesRequest
+	14, // 11: safetypolicy.SafetyPolicyService.UpdateSafetyPolicy:input_type -> safetypolicy.UpdateSafetyPolicyRequest
+	5,  // 12: safetypolicy.SafetyPolicyService.EvaluateScaling:input_type -> safetypolicy.EvaluateScalingRequest
+	8,  // 13: safetypolicy.SafetyPolicyService.CheckSafety:output_type -> safetypolicy.SafetyCheckResponse
+	10, // 14: safetypolicy.SafetyPolicyService.ApplySafetyPolicy:output_type -> safetypolicy.SafetyApplyResponse
+	12, // 15: safetypolicy.SafetyPolicyService.GetSafetyPolicies:output_type -> safetypolicy.GetSafetyPoliciesResponse
+	15, // 16: safetypolicy.SafetyPolicyService.UpdateSafetyPolicy:output_type -> safetypolicy.UpdateSafetyPolicyResponse
+	6,  // 17: safetypolicy.SafetyPolicyService.EvaluateScaling:output_type -> safetypolicy.ScalingVerdictResponse
+	13, // [13:18] is the sub-list for method output_type
+	8,  // [8:13] is the sub-list for method input_type
+	8,  // [8:8] is the sub-list for extension type_name
+	8,  // [8:8] is the sub-list for extension extendee
+	0,  // [0:8] is the sub-list for field type_name
 }
 
 func init() { file_safety_policy_proto_init() }
@@ -766,8 +1265,8 @@ func file_safety_policy_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_safety_policy_proto_rawDesc), len(file_safety_policy_proto_rawDesc)),
-			NumEnums:      2,
-			NumMessages:   10,
+			NumEnums:      3,
+			NumMessages:   14,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

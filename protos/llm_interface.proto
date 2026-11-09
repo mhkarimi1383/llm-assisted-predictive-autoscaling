@@ -10,11 +10,44 @@ service LLMInterfaceService {
   // Generate text from a prompt with streaming response
   rpc GenerateTextStream (GenerateTextRequest) returns (stream GenerateTextResponse);
 
+  // Chat-completions style request against an OpenAI-compatible API
+  // (or the deterministic mock provider). Used by the multi-agent
+  // reasoning engine (Algorithm 3).
+  rpc Chat (ChatRequest) returns (ChatResponse);
+
   // Get embeddings for text
   rpc GetEmbeddings (EmbeddingsRequest) returns (EmbeddingsResponse);
 
   // Count tokens in text
   rpc CountTokens (TokenCountRequest) returns (TokenCountResponse);
+}
+
+// One chat message in the conversation
+message ChatMessage {
+  string role = 1; // "system", "user", or "assistant"
+  string content = 2;
+}
+
+// Chat-completions request; fields map to the OpenAI-compatible API
+message ChatRequest {
+  repeated ChatMessage messages = 1;
+  string model = 2; // empty = service default model
+  double temperature = 3;
+  int32 max_tokens = 4; // 0 = API default
+  bool json_mode = 5; // request strict JSON output (response_format)
+  string request_id = 6; // caller-assigned correlation identifier
+  string endpoint = 7; // optional provider base URL override; empty = service default
+  string api_key = 8; // optional bearer token override; empty = service default
+}
+
+// Chat-completions response
+message ChatResponse {
+  string content = 1; // assistant message content
+  int32 prompt_tokens = 2;
+  int32 completion_tokens = 3;
+  string finish_reason = 4; // "stop", "length", ...
+  string model = 5;
+  string error = 6; // empty on success; reason on failure
 }
 
 // Request for text generation

@@ -1,0 +1,568 @@
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.23.0
+  name: llmautoscalers.autoscaling.karimi.dev
+spec:
+  group: autoscaling.karimi.dev
+  names:
+    categories:
+    - all
+    kind: LLMAutoscaler
+    listKind: LLMAutoscalerList
+    plural: llmautoscalers
+    shortNames:
+    - llmas
+    singular: llmautoscaler
+  scope: Namespaced
+  versions:
+  - additionalPrinterColumns:
+    - jsonPath: .spec.scaleTargetRef.name
+      name: Target
+      type: string
+    - jsonPath: .status.currentReplicas
+      name: Replicas
+      type: integer
+    - jsonPath: .status.lastAction
+      name: Last Action
+      type: string
+    - jsonPath: .status.lastRecommendation.confidence
+      name: Confidence
+      priority: 1
+      type: number
+    - jsonPath: .metadata.creationTimestamp
+      name: Age
+      type: date
+    name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: |-
+          LLMAutoscaler is the Schema for the llmautoscalers API. One
+          resource manages the replica count of one target Deployment through
+          the multi-agent reasoning and deterministic safety pipeline.
+        properties:
+          apiVersion:
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+            type: string
+          kind:
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: |-
+              LLMAutoscalerSpec defines the desired state of an LLMAutoscaler:
+              one managed workload, its safety constraints, and the reasoning
+              configuration used for every decision cycle.
+            properties:
+              dryRun:
+                description: |-
+                  When true, decisions are validated and recorded but no scaling
+                  write is submitted (Algorithm 7 dry run).
+                type: boolean
+              forecast:
+                description: Workload forecast provider.
+                properties:
+                  provider:
+                    default: stub
+                    description: |-
+                      Forecast provider: "stub" generates a synthetic demand curve
+                      (useful for demos), "rest" fetches predictions from an external
+                      HTTP service.
+                    enum:
+                    - stub
+                    - rest
+                    type: string
+                  restUrl:
+                    description: Predictor URL, used when provider is "rest".
+                    type: string
+                type: object
+              llm:
+                description: LLM service configuration.
+                properties:
+                  apiKeySecret:
+                    description: Optional reference to a Secret key holding the API
+                      key.
+                    properties:
+                      key:
+                        description: Key inside the Secret that holds the API key.
+                        minLength: 1
+                        type: string
+                      name:
+                        description: Name of the Secret.
+                        minLength: 1
+                        type: string
+                    required:
+                    - key
+                    - name
+                    type: object
+                  endpoint:
+                    description: |-
+                      Base URL of an OpenAI-compatible API, for example
+                      "http://ollama:11434/v1" or "https://api.openai.com/v1".
+                      Use "mock://" for the built-in deterministic mock provider.
+                    minLength: 1
+                    type: string
+                  model:
+                    description: Model name passed to the chat-completions API.
+                    minLength: 1
+                    type: string
+                required:
+                - endpoint
+                - model
+                type: object
+              maxReplicas:
+                description: Maximum replica count.
+                format: int32
+                minimum: 1
+                type: integer
+              metrics:
+                description: Utilization metrics provider.
+                properties:
+                  prometheusUrl:
+                    description: Prometheus base URL, used when provider is "prometheus".
+                    type: string
+                  provider:
+                    default: metrics-server
+                    description: |-
+                      Metrics provider: "metrics-server" reads the Kubernetes Metrics
+                      API, "prometheus" queries a Prometheus server.
+                    enum:
+                    - metrics-server
+                    - prometheus
+                    type: string
+                type: object
+              minReplicas:
+                default: 1
+                description: |-
+                  Minimum replica count. Must be at least 1; scale-to-zero is not
+                  supported in v1.
+                format: int32
+                minimum: 1
+                type: integer
+              reasoning:
+                description: Multi-agent reasoning configuration.
+                properties:
+                  analystWeights:
+                    description: Per-role voting weights. Defaults are equal weights.
+                    properties:
+                      forecast:
+                        minimum: 0
+                        type: number
+                      history:
+                        minimum: 0
+                        type: number
+                      policy:
+                        minimum: 0
+                        type: number
+                      status:
+                        minimum: 0
+                        type: number
+                    type: object
+                  confidenceThreshold:
+                    default: 0.6
+                    description: |-
+                      Minimum recommendation confidence (0 to 1) required to act on a
+                      recommendation. Below it the cycle holds.
+                    maximum: 1
+                    minimum: 0
+                    type: number
+                  quorum:
+                    default: 3
+                    description: |-
+                      Minimum number of valid analyst results required for a
+                      recommendation. The forecast and status roles must always be
+                      among the valid results.
+                    format: int32
+                    maximum: 4
+                    minimum: 2
+                    type: integer
+                  timeoutSeconds:
+                    default: 30
+                    description: |-
+                      Deadline for the whole reasoning phase (fanout plus synthesis)
+                      in seconds.
+                    format: int32
+                    minimum: 1
+                    type: integer
+                type: object
+              safety:
+                description: Deterministic safety constraints.
+                properties:
+                  cooldownSeconds:
+                    default: 120
+                    description: Minimum seconds between two scaling actions (cooldown).
+                    format: int32
+                    minimum: 0
+                    type: integer
+                  maxActionsPerHour:
+                    default: 20
+                    description: |-
+                      Maximum number of executed scaling actions per hour
+                      (rate limit). 0 means unlimited.
+                    format: int32
+                    minimum: 0
+                    type: integer
+                  maxScaleDownPercent:
+                    default: 25
+                    description: |-
+                      Maximum replica decrease per action, as a percentage of the
+                      current replica count. 0 means unlimited.
+                    format: int32
+                    minimum: 0
+                    type: integer
+                  maxScaleUpPercent:
+                    default: 100
+                    description: |-
+                      Maximum replica increase per action, as a percentage of the
+                      current replica count. 0 means unlimited.
+                    format: int32
+                    minimum: 0
+                    type: integer
+                  minStepReplicas:
+                    default: 0
+                    description: |-
+                      Minimum replica movement per action. Percentage limits round
+                      downward (Algorithm 6); small counts can round a percentage
+                      allowance down to zero, permanently blocking movement near
+                      minReplicas. A positive value funds at least this many replicas
+                      of movement per action. 0 keeps the strict floor behavior.
+                    format: int32
+                    minimum: 0
+                    type: integer
+                  observationTimeoutSeconds:
+                    default: 300
+                    description: |-
+                      Maximum seconds a submitted operation may stay under
+                      observation before it is marked terminal and recovery is
+                      considered (Algorithm 9 observation deadline).
+                    format: int32
+                    minimum: 1
+                    type: integer
+                  stabilizationWindowSeconds:
+                    default: 300
+                    description: |-
+                      Downscale stabilization window (Algorithm 6): scale-down is
+                      blocked unless the highest required target recorded within this
+                      window is not higher than the proposed target.
+                    format: int32
+                    minimum: 0
+                    type: integer
+                  verificationWindowSeconds:
+                    default: 60
+                    description: |-
+                      Seconds the target must stay continuously healthy before a
+                      submitted scaling operation counts as applied (Algorithm 9
+                      verification window).
+                    format: int32
+                    minimum: 0
+                    type: integer
+                type: object
+              scaleTargetRef:
+                description: Reference to the workload this autoscaler manages.
+                properties:
+                  kind:
+                    description: Kind of the target resource. Only "Deployment" is
+                      supported.
+                    enum:
+                    - Deployment
+                    type: string
+                  name:
+                    description: Name of the target Deployment in the same namespace.
+                    minLength: 1
+                    type: string
+                required:
+                - kind
+                - name
+                type: object
+            required:
+            - llm
+            - maxReplicas
+            - scaleTargetRef
+            type: object
+          status:
+            description: |-
+              LLMAutoscalerStatus is the most recently observed state of an
+              LLMAutoscaler: current replica count, latest recommendation with
+              its safety verdict, recent actions, and conditions.
+            properties:
+              conditions:
+                description: Conditions of the autoscaler (Ready, Degraded, ...).
+                items:
+                  description: Condition contains details for one aspect of the current
+                    state of this API Resource.
+                  properties:
+                    lastTransitionTime:
+                      description: |-
+                        lastTransitionTime is the last time the condition transitioned from one status to another.
+                        This should be when the underlying condition changed.  If that is not known, then using the time when the API field changed is acceptable.
+                      format: date-time
+                      type: string
+                    message:
+                      description: |-
+                        message is a human readable message indicating details about the transition.
+                        This may be an empty string.
+                      maxLength: 32768
+                      type: string
+                    observedGeneration:
+                      description: |-
+                        observedGeneration represents the .metadata.generation that the condition was set based upon.
+                        For instance, if .metadata.generation is currently 12, but the .status.conditions[x].observedGeneration is 9, the condition is out of date
+                        with respect to the current state of the instance.
+                      format: int64
+                      minimum: 0
+                      type: integer
+                    reason:
+                      description: |-
+                        reason contains a programmatic identifier indicating the reason for the condition's last transition.
+                        Producers of specific condition types may define expected values and meanings for this field,
+                        and whether the values are considered a guaranteed API.
+                        The value should be a CamelCase string.
+                        This field may not be empty.
+                      maxLength: 1024
+                      minLength: 1
+                      pattern: ^[A-Za-z]([A-Za-z0-9_,:]*[A-Za-z0-9_])?$
+                      type: string
+                    status:
+                      description: status of the condition, one of True, False, Unknown.
+                      enum:
+                      - "True"
+                      - "False"
+                      - Unknown
+                      type: string
+                    type:
+                      description: type of condition in CamelCase or in foo.example.com/CamelCase.
+                      maxLength: 316
+                      pattern: ^([a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*/)?(([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])$
+                      type: string
+                  required:
+                  - lastTransitionTime
+                  - message
+                  - reason
+                  - status
+                  - type
+                  type: object
+                type: array
+              currentReplicas:
+                description: |-
+                  Current desired replica count of the target workload as
+                  observed by the latest cycle.
+                format: int32
+                type: integer
+              lastAction:
+                description: 'Latest action applied or held: SCALE_UP, SCALE_DOWN,
+                  or HOLD.'
+                type: string
+              lastRecommendation:
+                description: Outcome of the latest decision cycle.
+                properties:
+                  action:
+                    description: 'Aggregated action: SCALE_UP, SCALE_DOWN, or HOLD.'
+                    type: string
+                  aggregationSummary:
+                    description: Deterministic summary of the vote (weights per action).
+                    type: string
+                  confidence:
+                    description: |-
+                      Recommendation confidence: the lesser of vote support and mean
+                      winning confidence (Algorithm 5).
+                    type: number
+                  noRecommendationReason:
+                    description: |-
+                      Reason recorded when aggregation produced no usable
+                      recommendation.
+                    type: string
+                  rationale:
+                    description: Synthesizer explanation or deterministic voting summary.
+                    type: string
+                  requestId:
+                    description: Identifier of the decision cycle that produced this
+                      record.
+                    type: string
+                  target:
+                    description: Aggregated target replica count.
+                    format: int32
+                    type: integer
+                  verdict:
+                    description: 'Safety verdict: APPROVED, CLAMPED, HELD, or REJECTED.'
+                    type: string
+                  verdictReasons:
+                    description: Reasons recorded with the safety verdict.
+                    items:
+                      type: string
+                    type: array
+                  votes:
+                    description: Individual analyst outcomes backing the recommendation.
+                    items:
+                      description: |-
+                        AnalystVote records one analyst outcome in the resource status for
+                        auditability: an action with a target, an abstention, or a failure.
+                      properties:
+                        abstained:
+                          description: |-
+                            True when the analyst abstained (for example, the history
+                            analyst without usable history).
+                          type: boolean
+                        abstentionReason:
+                          description: Reason recorded with an abstention.
+                          type: string
+                        action:
+                          description: SCALE_UP, SCALE_DOWN, or HOLD. Empty when abstained
+                            or failed.
+                          type: string
+                        confidence:
+                          description: Self-reported confidence between 0 and 1.
+                          type: number
+                        error:
+                          description: Reason recorded when the analyst result failed
+                            validation.
+                          type: string
+                        rationale:
+                          description: Concise rationale for the vote.
+                          type: string
+                        role:
+                          description: 'Analyst role: forecast, status, policy, or
+                            history.'
+                          type: string
+                        target:
+                          description: Proposed replica count. Zero when abstained
+                            or failed.
+                          format: int32
+                          type: integer
+                      required:
+                      - role
+                      type: object
+                    type: array
+                type: object
+              lastScaleTime:
+                description: Time of the last submitted scaling write.
+                format: date-time
+                type: string
+              lastVerifiedHealthyReplicas:
+                description: |-
+                  Last replica count verified healthy across a full verification
+                  window; the recovery target of Algorithm 9.
+                format: int32
+                type: integer
+              observedGeneration:
+                description: Observed generation of the spec used by the latest cycle.
+                format: int64
+                type: integer
+              pendingOperation:
+                description: |-
+                  Operation under observation or reconciliation, when one is
+                  in flight. While set, the control cycle observes instead of
+                  starting a new decision (Algorithm 9).
+                properties:
+                  action:
+                    description: SCALE_UP or SCALE_DOWN.
+                    type: string
+                  deploymentUid:
+                    description: |-
+                      UID of the target Deployment at submission time; a mismatch
+                      means the workload was replaced (ownership/identity conflict).
+                    type: string
+                  fromReplicas:
+                    description: Replica count observed before the write.
+                    format: int32
+                    type: integer
+                  observeDeadline:
+                    description: |-
+                      Time after which a non-converged operation is marked terminal
+                      and recovery is considered.
+                    format: date-time
+                    type: string
+                  opId:
+                    description: Unique operation identifier.
+                    type: string
+                  parentOpId:
+                    description: Operation this recovery step belongs to; empty for
+                      normal ops.
+                    type: string
+                  phase:
+                    description: UNCERTAIN, PENDING, or RECOVERY.
+                    type: string
+                  requestId:
+                    description: Decision cycle that produced the operation.
+                    type: string
+                  submittedAt:
+                    description: |-
+                      Time the write was submitted (or, in phase UNCERTAIN, the time
+                      the submission was attempted).
+                    format: date-time
+                    type: string
+                  targetReplicas:
+                    description: Replica count submitted (or to be submitted).
+                    format: int32
+                    type: integer
+                  verifiedSince:
+                    description: |-
+                      Start of the current continuous healthy interval; nil until the
+                      checked target was first observed healthy.
+                    format: date-time
+                    type: string
+                required:
+                - action
+                - fromReplicas
+                - opId
+                - phase
+                - submittedAt
+                - targetReplicas
+                type: object
+              recentActions:
+                description: |-
+                  Recent scaling actions (bounded), newest last. Used as the
+                  scaling history for safety checks.
+                items:
+                  description: |-
+                    ActionRecord is one executed (or dry-run) scaling action kept in
+                    the status as the recent scaling history consumed by cooldown,
+                    rate-limit, and stabilization checks.
+                  properties:
+                    action:
+                      description: SCALE_UP or SCALE_DOWN.
+                      type: string
+                    dryRun:
+                      description: True when the action was recorded by a dry-run
+                        cycle.
+                      type: boolean
+                    fromReplicas:
+                      description: Replica count before the action.
+                      format: int32
+                      type: integer
+                    requestId:
+                      description: Identifier of the decision cycle that produced
+                        the action.
+                      type: string
+                    time:
+                      description: Time the action was submitted.
+                      format: date-time
+                      type: string
+                    toReplicas:
+                      description: Replica count after the action.
+                      format: int32
+                      type: integer
+                  required:
+                  - action
+                  - fromReplicas
+                  - time
+                  - toReplicas
+                  type: object
+                type: array
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}

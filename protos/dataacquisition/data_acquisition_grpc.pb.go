@@ -23,6 +23,7 @@ const (
 	DataAcquisitionService_GetClusterMetrics_FullMethodName            = "/dataacquisition.DataAcquisitionService/GetClusterMetrics"
 	DataAcquisitionService_SubscribeWorkloadPredictions_FullMethodName = "/dataacquisition.DataAcquisitionService/SubscribeWorkloadPredictions"
 	DataAcquisitionService_SubscribeClusterMetrics_FullMethodName      = "/dataacquisition.DataAcquisitionService/SubscribeClusterMetrics"
+	DataAcquisitionService_GetWorkloadSnapshot_FullMethodName          = "/dataacquisition.DataAcquisitionService/GetWorkloadSnapshot"
 )
 
 // DataAcquisitionServiceClient is the client API for DataAcquisitionService service.
@@ -39,6 +40,10 @@ type DataAcquisitionServiceClient interface {
 	SubscribeWorkloadPredictions(ctx context.Context, in *WorkloadPredictionSubscriptionRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[WorkloadPredictionResponse], error)
 	// Subscribe to a stream of cluster metrics
 	SubscribeClusterMetrics(ctx context.Context, in *ClusterMetricsSubscriptionRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[ClusterMetricsResponse], error)
+	// Collect a decision snapshot for one workload (Algorithm 2): the
+	// workload state, current utilization metrics, and the forecast
+	// over the decision horizon, collected in parallel and validated.
+	GetWorkloadSnapshot(ctx context.Context, in *WorkloadSnapshotRequest, opts ...grpc.CallOption) (*WorkloadSnapshot, error)
 }
 
 type dataAcquisitionServiceClient struct {
@@ -107,6 +112,16 @@ func (c *dataAcquisitionServiceClient) SubscribeClusterMetrics(ctx context.Conte
 // This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
 type DataAcquisitionService_SubscribeClusterMetricsClient = grpc.ServerStreamingClient[ClusterMetricsResponse]
 
+func (c *dataAcquisitionServiceClient) GetWorkloadSnapshot(ctx context.Context, in *WorkloadSnapshotRequest, opts ...grpc.CallOption) (*WorkloadSnapshot, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(WorkloadSnapshot)
+	err := c.cc.Invoke(ctx, DataAcquisitionService_GetWorkloadSnapshot_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // DataAcquisitionServiceServer is the server API for DataAcquisitionService service.
 // All implementations must embed UnimplementedDataAcquisitionServiceServer
 // for forward compatibility.
@@ -121,6 +136,10 @@ type DataAcquisitionServiceServer interface {
 	SubscribeWorkloadPredictions(*WorkloadPredictionSubscriptionRequest, grpc.ServerStreamingServer[WorkloadPredictionResponse]) error
 	// Subscribe to a stream of cluster metrics
 	SubscribeClusterMetrics(*ClusterMetricsSubscriptionRequest, grpc.ServerStreamingServer[ClusterMetricsResponse]) error
+	// Collect a decision snapshot for one workload (Algorithm 2): the
+	// workload state, current utilization metrics, and the forecast
+	// over the decision horizon, collected in parallel and validated.
+	GetWorkloadSnapshot(context.Context, *WorkloadSnapshotRequest) (*WorkloadSnapshot, error)
 	mustEmbedUnimplementedDataAcquisitionServiceServer()
 }
 
@@ -142,6 +161,9 @@ func (UnimplementedDataAcquisitionServiceServer) SubscribeWorkloadPredictions(*W
 }
 func (UnimplementedDataAcquisitionServiceServer) SubscribeClusterMetrics(*ClusterMetricsSubscriptionRequest, grpc.ServerStreamingServer[ClusterMetricsResponse]) error {
 	return status.Error(codes.Unimplemented, "method SubscribeClusterMetrics not implemented")
+}
+func (UnimplementedDataAcquisitionServiceServer) GetWorkloadSnapshot(context.Context, *WorkloadSnapshotRequest) (*WorkloadSnapshot, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetWorkloadSnapshot not implemented")
 }
 func (UnimplementedDataAcquisitionServiceServer) mustEmbedUnimplementedDataAcquisitionServiceServer() {
 }
@@ -223,6 +245,24 @@ func _DataAcquisitionService_SubscribeClusterMetrics_Handler(srv interface{}, st
 // This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
 type DataAcquisitionService_SubscribeClusterMetricsServer = grpc.ServerStreamingServer[ClusterMetricsResponse]
 
+func _DataAcquisitionService_GetWorkloadSnapshot_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(WorkloadSnapshotRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(DataAcquisitionServiceServer).GetWorkloadSnapshot(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: DataAcquisitionService_GetWorkloadSnapshot_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(DataAcquisitionServiceServer).GetWorkloadSnapshot(ctx, req.(*WorkloadSnapshotRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // DataAcquisitionService_ServiceDesc is the grpc.ServiceDesc for DataAcquisitionService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -237,6 +277,10 @@ var DataAcquisitionService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetClusterMetrics",
 			Handler:    _DataAcquisitionService_GetClusterMetrics_Handler,
+		},
+		{
+			MethodName: "GetWorkloadSnapshot",
+			Handler:    _DataAcquisitionService_GetWorkloadSnapshot_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{

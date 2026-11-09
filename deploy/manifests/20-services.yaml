@@ -1,0 +1,330 @@
+# Backing services and operator of the LLM autoscaler.
+# One image (llm-autoscaler) with per-Deployment subcommands, plus the
+# Python multi-agent reasoning service.
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: data-acquisition
+  namespace: llm-autoscaler-system
+  labels: &labels
+    app.kubernetes.io/name: llm-autoscaler
+    app.kubernetes.io/component: data-acquisition
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: llm-autoscaler
+      app.kubernetes.io/component: data-acquisition
+  template:
+    metadata:
+      labels: *labels
+    spec:
+      serviceAccountName: llm-autoscaler
+      containers:
+        - name: service
+          image: llm-autoscaler:dev
+          imagePullPolicy: IfNotPresent
+          resources:
+            requests: { cpu: 50m, memory: 64Mi }
+            limits: { memory: 256Mi }
+          command: ["/usr/local/bin/llm-autoscaler", "dataacquisition"]
+          ports:
+            - containerPort: 50051
+              name: grpc
+          readinessProbe:
+            tcpSocket: { port: 50051 }
+          livenessProbe:
+            tcpSocket: { port: 50051 }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: data-acquisition
+  namespace: llm-autoscaler-system
+  labels:
+    app.kubernetes.io/name: llm-autoscaler
+    app.kubernetes.io/component: data-acquisition
+spec:
+  selector:
+    app.kubernetes.io/name: llm-autoscaler
+    app.kubernetes.io/component: data-acquisition
+  ports:
+    - port: 50051
+      targetPort: 50051
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: llm-interface
+  namespace: llm-autoscaler-system
+  labels: &labels
+    app.kubernetes.io/name: llm-autoscaler
+    app.kubernetes.io/component: llm-interface
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: llm-autoscaler
+      app.kubernetes.io/component: llm-interface
+  template:
+    metadata:
+      labels: *labels
+    spec:
+      serviceAccountName: llm-autoscaler
+      containers:
+        - name: service
+          image: llm-autoscaler:dev
+          imagePullPolicy: IfNotPresent
+          resources:
+            requests: { cpu: 50m, memory: 64Mi }
+            limits: { memory: 256Mi }
+          # mock:// serves deterministic analyst decisions without an
+          # external LLM; point --llm-provider-endpoint at any
+          # OpenAI-compatible base URL for real models.
+          command: ["/usr/local/bin/llm-autoscaler", "llminterface"]
+          args: ["--llm-provider-endpoint", "mock://"]
+          ports:
+            - containerPort: 50052
+              name: grpc
+          readinessProbe:
+            tcpSocket: { port: 50052 }
+          livenessProbe:
+            tcpSocket: { port: 50052 }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: llm-interface
+  namespace: llm-autoscaler-system
+  labels:
+    app.kubernetes.io/name: llm-autoscaler
+    app.kubernetes.io/component: llm-interface
+spec:
+  selector:
+    app.kubernetes.io/name: llm-autoscaler
+    app.kubernetes.io/component: llm-interface
+  ports:
+    - port: 50052
+      targetPort: 50052
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: safety-policy
+  namespace: llm-autoscaler-system
+  labels: &labels
+    app.kubernetes.io/name: llm-autoscaler
+    app.kubernetes.io/component: safety-policy
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: llm-autoscaler
+      app.kubernetes.io/component: safety-policy
+  template:
+    metadata:
+      labels: *labels
+    spec:
+      serviceAccountName: llm-autoscaler
+      containers:
+        - name: service
+          image: llm-autoscaler:dev
+          imagePullPolicy: IfNotPresent
+          resources:
+            requests: { cpu: 50m, memory: 64Mi }
+            limits: { memory: 256Mi }
+          command: ["/usr/local/bin/llm-autoscaler", "safetypolicy"]
+          ports:
+            - containerPort: 50053
+              name: grpc
+          readinessProbe:
+            tcpSocket: { port: 50053 }
+          livenessProbe:
+            tcpSocket: { port: 50053 }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: safety-policy
+  namespace: llm-autoscaler-system
+  labels:
+    app.kubernetes.io/name: llm-autoscaler
+    app.kubernetes.io/component: safety-policy
+spec:
+  selector:
+    app.kubernetes.io/name: llm-autoscaler
+    app.kubernetes.io/component: safety-policy
+  ports:
+    - port: 50053
+      targetPort: 50053
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: scaling-executor
+  namespace: llm-autoscaler-system
+  labels: &labels
+    app.kubernetes.io/name: llm-autoscaler
+    app.kubernetes.io/component: scaling-executor
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: llm-autoscaler
+      app.kubernetes.io/component: scaling-executor
+  template:
+    metadata:
+      labels: *labels
+    spec:
+      serviceAccountName: llm-autoscaler
+      containers:
+        - name: service
+          image: llm-autoscaler:dev
+          imagePullPolicy: IfNotPresent
+          resources:
+            requests: { cpu: 50m, memory: 64Mi }
+            limits: { memory: 256Mi }
+          command: ["/usr/local/bin/llm-autoscaler", "scalingexecutor"]
+          ports:
+            - containerPort: 50054
+              name: grpc
+          readinessProbe:
+            tcpSocket: { port: 50054 }
+          livenessProbe:
+            tcpSocket: { port: 50054 }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: scaling-executor
+  namespace: llm-autoscaler-system
+  labels:
+    app.kubernetes.io/name: llm-autoscaler
+    app.kubernetes.io/component: scaling-executor
+spec:
+  selector:
+    app.kubernetes.io/name: llm-autoscaler
+    app.kubernetes.io/component: scaling-executor
+  ports:
+    - port: 50054
+      targetPort: 50054
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: multi-agent-reasoning
+  namespace: llm-autoscaler-system
+  labels: &labels
+    app.kubernetes.io/name: llm-autoscaler
+    app.kubernetes.io/component: multi-agent-reasoning
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: llm-autoscaler
+      app.kubernetes.io/component: multi-agent-reasoning
+  template:
+    metadata:
+      labels: *labels
+    spec:
+      serviceAccountName: llm-autoscaler
+      containers:
+        - name: service
+          image: multi-agent-reasoning:dev
+          imagePullPolicy: IfNotPresent
+          resources:
+            requests: { cpu: 50m, memory: 64Mi }
+            limits: { memory: 256Mi }
+          command: ["/app/.venv/bin/python", "-m", "multi_agent_reasoning.main"]
+          args: ["--llm-interface-host", "llm-interface.llm-autoscaler-system.svc"]
+          ports:
+            - containerPort: 50055
+              name: grpc
+          readinessProbe:
+            tcpSocket: { port: 50055 }
+          livenessProbe:
+            tcpSocket: { port: 50055 }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: multi-agent-reasoning
+  namespace: llm-autoscaler-system
+  labels:
+    app.kubernetes.io/name: llm-autoscaler
+    app.kubernetes.io/component: multi-agent-reasoning
+spec:
+  selector:
+    app.kubernetes.io/name: llm-autoscaler
+    app.kubernetes.io/component: multi-agent-reasoning
+  ports:
+    - port: 50055
+      targetPort: 50055
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: operator
+  namespace: llm-autoscaler-system
+  labels: &labels
+    app.kubernetes.io/name: llm-autoscaler
+    app.kubernetes.io/component: operator
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: llm-autoscaler
+      app.kubernetes.io/component: operator
+  template:
+    metadata:
+      labels: *labels
+    spec:
+      serviceAccountName: llm-autoscaler
+      containers:
+        - name: operator
+          image: llm-autoscaler:dev
+          imagePullPolicy: IfNotPresent
+          resources:
+            requests: { cpu: 50m, memory: 64Mi }
+            limits: { memory: 256Mi }
+          command: ["/usr/local/bin/llm-autoscaler", "operator"]
+          args:
+            - --operator-metrics-addr=:8080
+            - --operator-probe-addr=:8081
+            - --data-acquisition-host=data-acquisition.llm-autoscaler-system.svc
+            - --llm-interface-host=llm-interface.llm-autoscaler-system.svc
+            - --safety-policy-host=safety-policy.llm-autoscaler-system.svc
+            - --scaling-executor-host=scaling-executor.llm-autoscaler-system.svc
+            - --multi-agent-reasoning-host=multi-agent-reasoning.llm-autoscaler-system.svc
+          env:
+            - name: POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+          ports:
+            - containerPort: 8080
+              name: metrics
+            - containerPort: 8081
+              name: probes
+          readinessProbe:
+            httpGet: { path: /readyz, port: 8081 }
+          livenessProbe:
+            httpGet: { path: /healthz, port: 8081 }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: operator-metrics
+  namespace: llm-autoscaler-system
+  labels:
+    app.kubernetes.io/name: llm-autoscaler
+    app.kubernetes.io/component: operator
+spec:
+  selector:
+    app.kubernetes.io/name: llm-autoscaler
+    app.kubernetes.io/component: operator
+  ports:
+    - name: metrics
+      port: 8080
+      targetPort: 8080

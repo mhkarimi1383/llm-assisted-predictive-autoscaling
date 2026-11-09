@@ -21,6 +21,589 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+// One forecast point of predicted demand over the decision horizon
+type ForecastPoint struct {
+	state           protoimpl.MessageState `protogen:"open.v1"`
+	Timestamp       int64                  `protobuf:"varint,1,opt,name=timestamp,proto3" json:"timestamp,omitempty"`                                     // Unix timestamp in seconds
+	PredictedCpu    float64                `protobuf:"fixed64,2,opt,name=predicted_cpu,json=predictedCpu,proto3" json:"predicted_cpu,omitempty"`          // Fraction of requested CPU (0..1); negative = unknown
+	PredictedMemory float64                `protobuf:"fixed64,3,opt,name=predicted_memory,json=predictedMemory,proto3" json:"predicted_memory,omitempty"` // Fraction of requested memory (0..1); negative = unknown
+	PredictedRps    float64                `protobuf:"fixed64,4,opt,name=predicted_rps,json=predictedRps,proto3" json:"predicted_rps,omitempty"`          // Requests per second; negative = unknown
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
+}
+
+func (x *ForecastPoint) Reset() {
+	*x = ForecastPoint{}
+	mi := &file_data_acquisition_proto_msgTypes[0]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ForecastPoint) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ForecastPoint) ProtoMessage() {}
+
+func (x *ForecastPoint) ProtoReflect() protoreflect.Message {
+	mi := &file_data_acquisition_proto_msgTypes[0]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ForecastPoint.ProtoReflect.Descriptor instead.
+func (*ForecastPoint) Descriptor() ([]byte, []int) {
+	return file_data_acquisition_proto_rawDescGZIP(), []int{0}
+}
+
+func (x *ForecastPoint) GetTimestamp() int64 {
+	if x != nil {
+		return x.Timestamp
+	}
+	return 0
+}
+
+func (x *ForecastPoint) GetPredictedCpu() float64 {
+	if x != nil {
+		return x.PredictedCpu
+	}
+	return 0
+}
+
+func (x *ForecastPoint) GetPredictedMemory() float64 {
+	if x != nil {
+		return x.PredictedMemory
+	}
+	return 0
+}
+
+func (x *ForecastPoint) GetPredictedRps() float64 {
+	if x != nil {
+		return x.PredictedRps
+	}
+	return 0
+}
+
+// Pod health summary of the target workload
+type PodStatusSummary struct {
+	state           protoimpl.MessageState `protogen:"open.v1"`
+	TotalPods       int32                  `protobuf:"varint,1,opt,name=total_pods,json=totalPods,proto3" json:"total_pods,omitempty"`
+	ReadyPods       int32                  `protobuf:"varint,2,opt,name=ready_pods,json=readyPods,proto3" json:"ready_pods,omitempty"`
+	PendingPods     int32                  `protobuf:"varint,3,opt,name=pending_pods,json=pendingPods,proto3" json:"pending_pods,omitempty"`
+	TerminatingPods int32                  `protobuf:"varint,4,opt,name=terminating_pods,json=terminatingPods,proto3" json:"terminating_pods,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
+}
+
+func (x *PodStatusSummary) Reset() {
+	*x = PodStatusSummary{}
+	mi := &file_data_acquisition_proto_msgTypes[1]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *PodStatusSummary) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*PodStatusSummary) ProtoMessage() {}
+
+func (x *PodStatusSummary) ProtoReflect() protoreflect.Message {
+	mi := &file_data_acquisition_proto_msgTypes[1]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use PodStatusSummary.ProtoReflect.Descriptor instead.
+func (*PodStatusSummary) Descriptor() ([]byte, []int) {
+	return file_data_acquisition_proto_rawDescGZIP(), []int{1}
+}
+
+func (x *PodStatusSummary) GetTotalPods() int32 {
+	if x != nil {
+		return x.TotalPods
+	}
+	return 0
+}
+
+func (x *PodStatusSummary) GetReadyPods() int32 {
+	if x != nil {
+		return x.ReadyPods
+	}
+	return 0
+}
+
+func (x *PodStatusSummary) GetPendingPods() int32 {
+	if x != nil {
+		return x.PendingPods
+	}
+	return 0
+}
+
+func (x *PodStatusSummary) GetTerminatingPods() int32 {
+	if x != nil {
+		return x.TerminatingPods
+	}
+	return 0
+}
+
+// Eligible cluster capacity for the workload (Algorithm 6 capacity
+// checks): sum of allocatable resources of ready, schedulable nodes.
+type ClusterCapacity struct {
+	state                  protoimpl.MessageState `protogen:"open.v1"`
+	NodeCount              int32                  `protobuf:"varint,1,opt,name=node_count,json=nodeCount,proto3" json:"node_count,omitempty"`
+	AllocatableCpuCores    float64                `protobuf:"fixed64,2,opt,name=allocatable_cpu_cores,json=allocatableCpuCores,proto3" json:"allocatable_cpu_cores,omitempty"`          // Sum of node allocatable CPU
+	AllocatableMemoryBytes float64                `protobuf:"fixed64,3,opt,name=allocatable_memory_bytes,json=allocatableMemoryBytes,proto3" json:"allocatable_memory_bytes,omitempty"` // Sum of node allocatable memory
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
+}
+
+func (x *ClusterCapacity) Reset() {
+	*x = ClusterCapacity{}
+	mi := &file_data_acquisition_proto_msgTypes[2]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ClusterCapacity) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ClusterCapacity) ProtoMessage() {}
+
+func (x *ClusterCapacity) ProtoReflect() protoreflect.Message {
+	mi := &file_data_acquisition_proto_msgTypes[2]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ClusterCapacity.ProtoReflect.Descriptor instead.
+func (*ClusterCapacity) Descriptor() ([]byte, []int) {
+	return file_data_acquisition_proto_rawDescGZIP(), []int{2}
+}
+
+func (x *ClusterCapacity) GetNodeCount() int32 {
+	if x != nil {
+		return x.NodeCount
+	}
+	return 0
+}
+
+func (x *ClusterCapacity) GetAllocatableCpuCores() float64 {
+	if x != nil {
+		return x.AllocatableCpuCores
+	}
+	return 0
+}
+
+func (x *ClusterCapacity) GetAllocatableMemoryBytes() float64 {
+	if x != nil {
+		return x.AllocatableMemoryBytes
+	}
+	return 0
+}
+
+// Namespace resource-quota usage relevant to the workload
+type QuotaUsage struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	HasQuota      bool                   `protobuf:"varint,1,opt,name=has_quota,json=hasQuota,proto3" json:"has_quota,omitempty"` // True when a pods quota applies in the namespace
+	MaxPods       int32                  `protobuf:"varint,2,opt,name=max_pods,json=maxPods,proto3" json:"max_pods,omitempty"`    // Most restrictive pods quota (hard); 0 when unknown
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *QuotaUsage) Reset() {
+	*x = QuotaUsage{}
+	mi := &file_data_acquisition_proto_msgTypes[3]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *QuotaUsage) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*QuotaUsage) ProtoMessage() {}
+
+func (x *QuotaUsage) ProtoReflect() protoreflect.Message {
+	mi := &file_data_acquisition_proto_msgTypes[3]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use QuotaUsage.ProtoReflect.Descriptor instead.
+func (*QuotaUsage) Descriptor() ([]byte, []int) {
+	return file_data_acquisition_proto_rawDescGZIP(), []int{3}
+}
+
+func (x *QuotaUsage) GetHasQuota() bool {
+	if x != nil {
+		return x.HasQuota
+	}
+	return false
+}
+
+func (x *QuotaUsage) GetMaxPods() int32 {
+	if x != nil {
+		return x.MaxPods
+	}
+	return 0
+}
+
+// Per-pod resource requests of the target workload (declared in the
+// pod template; the basis of utilization and capacity estimates)
+type PodResources struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	CpuCores      float64                `protobuf:"fixed64,1,opt,name=cpu_cores,json=cpuCores,proto3" json:"cpu_cores,omitempty"`          // Sum of container CPU requests per pod
+	MemoryBytes   float64                `protobuf:"fixed64,2,opt,name=memory_bytes,json=memoryBytes,proto3" json:"memory_bytes,omitempty"` // Sum of container memory requests per pod
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *PodResources) Reset() {
+	*x = PodResources{}
+	mi := &file_data_acquisition_proto_msgTypes[4]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *PodResources) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*PodResources) ProtoMessage() {}
+
+func (x *PodResources) ProtoReflect() protoreflect.Message {
+	mi := &file_data_acquisition_proto_msgTypes[4]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use PodResources.ProtoReflect.Descriptor instead.
+func (*PodResources) Descriptor() ([]byte, []int) {
+	return file_data_acquisition_proto_rawDescGZIP(), []int{4}
+}
+
+func (x *PodResources) GetCpuCores() float64 {
+	if x != nil {
+		return x.CpuCores
+	}
+	return 0
+}
+
+func (x *PodResources) GetMemoryBytes() float64 {
+	if x != nil {
+		return x.MemoryBytes
+	}
+	return 0
+}
+
+// Request for a workload decision snapshot
+type WorkloadSnapshotRequest struct {
+	state                  protoimpl.MessageState `protogen:"open.v1"`
+	Namespace              string                 `protobuf:"bytes,1,opt,name=namespace,proto3" json:"namespace,omitempty"`
+	ResourceName           string                 `protobuf:"bytes,2,opt,name=resource_name,json=resourceName,proto3" json:"resource_name,omitempty"`
+	ForecastHorizonSeconds int32                  `protobuf:"varint,3,opt,name=forecast_horizon_seconds,json=forecastHorizonSeconds,proto3" json:"forecast_horizon_seconds,omitempty"` // Requested forecast horizon; 0 = provider default
+	MetricsProvider        string                 `protobuf:"bytes,4,opt,name=metrics_provider,json=metricsProvider,proto3" json:"metrics_provider,omitempty"`                         // "metrics-server" | "prometheus"; empty = service default
+	PrometheusUrl          string                 `protobuf:"bytes,5,opt,name=prometheus_url,json=prometheusUrl,proto3" json:"prometheus_url,omitempty"`                               // Prometheus base URL when metrics_provider is prometheus
+	ForecastProvider       string                 `protobuf:"bytes,6,opt,name=forecast_provider,json=forecastProvider,proto3" json:"forecast_provider,omitempty"`                      // "stub" | "rest"; empty = service default
+	ForecastUrl            string                 `protobuf:"bytes,7,opt,name=forecast_url,json=forecastUrl,proto3" json:"forecast_url,omitempty"`                                     // Predictor URL when forecast_provider is rest
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
+}
+
+func (x *WorkloadSnapshotRequest) Reset() {
+	*x = WorkloadSnapshotRequest{}
+	mi := &file_data_acquisition_proto_msgTypes[5]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *WorkloadSnapshotRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*WorkloadSnapshotRequest) ProtoMessage() {}
+
+func (x *WorkloadSnapshotRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_data_acquisition_proto_msgTypes[5]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use WorkloadSnapshotRequest.ProtoReflect.Descriptor instead.
+func (*WorkloadSnapshotRequest) Descriptor() ([]byte, []int) {
+	return file_data_acquisition_proto_rawDescGZIP(), []int{5}
+}
+
+func (x *WorkloadSnapshotRequest) GetNamespace() string {
+	if x != nil {
+		return x.Namespace
+	}
+	return ""
+}
+
+func (x *WorkloadSnapshotRequest) GetResourceName() string {
+	if x != nil {
+		return x.ResourceName
+	}
+	return ""
+}
+
+func (x *WorkloadSnapshotRequest) GetForecastHorizonSeconds() int32 {
+	if x != nil {
+		return x.ForecastHorizonSeconds
+	}
+	return 0
+}
+
+func (x *WorkloadSnapshotRequest) GetMetricsProvider() string {
+	if x != nil {
+		return x.MetricsProvider
+	}
+	return ""
+}
+
+func (x *WorkloadSnapshotRequest) GetPrometheusUrl() string {
+	if x != nil {
+		return x.PrometheusUrl
+	}
+	return ""
+}
+
+func (x *WorkloadSnapshotRequest) GetForecastProvider() string {
+	if x != nil {
+		return x.ForecastProvider
+	}
+	return ""
+}
+
+func (x *WorkloadSnapshotRequest) GetForecastUrl() string {
+	if x != nil {
+		return x.ForecastUrl
+	}
+	return ""
+}
+
+// Decision snapshot consumed by the multi-agent reasoning engine.
+// Utilization values are fractions of requests (0..1); negative
+// means unknown. Error fields are empty when a source succeeded.
+type WorkloadSnapshot struct {
+	state              protoimpl.MessageState `protogen:"open.v1"`
+	Namespace          string                 `protobuf:"bytes,1,opt,name=namespace,proto3" json:"namespace,omitempty"`
+	ResourceName       string                 `protobuf:"bytes,2,opt,name=resource_name,json=resourceName,proto3" json:"resource_name,omitempty"`
+	ObservedAt         int64                  `protobuf:"varint,3,opt,name=observed_at,json=observedAt,proto3" json:"observed_at,omitempty"`                // Unix timestamp in seconds
+	ResourceVersion    string                 `protobuf:"bytes,4,opt,name=resource_version,json=resourceVersion,proto3" json:"resource_version,omitempty"`  // resourceVersion of the target at read time
+	DesiredReplicas    int32                  `protobuf:"varint,5,opt,name=desired_replicas,json=desiredReplicas,proto3" json:"desired_replicas,omitempty"` // spec.replicas of the target
+	ReadyReplicas      int32                  `protobuf:"varint,6,opt,name=ready_replicas,json=readyReplicas,proto3" json:"ready_replicas,omitempty"`
+	ObservedGeneration int64                  `protobuf:"varint,7,opt,name=observed_generation,json=observedGeneration,proto3" json:"observed_generation,omitempty"` // metadata.generation of the target
+	Pods               *PodStatusSummary      `protobuf:"bytes,8,opt,name=pods,proto3" json:"pods,omitempty"`
+	CpuUtilization     float64                `protobuf:"fixed64,9,opt,name=cpu_utilization,json=cpuUtilization,proto3" json:"cpu_utilization,omitempty"`           // Fraction of requests; negative = unknown
+	MemoryUtilization  float64                `protobuf:"fixed64,10,opt,name=memory_utilization,json=memoryUtilization,proto3" json:"memory_utilization,omitempty"` // Fraction of requests; negative = unknown
+	Forecast           []*ForecastPoint       `protobuf:"bytes,11,rep,name=forecast,proto3" json:"forecast,omitempty"`
+	ForecastProvider   string                 `protobuf:"bytes,12,opt,name=forecast_provider,json=forecastProvider,proto3" json:"forecast_provider,omitempty"`
+	MetricsProvider    string                 `protobuf:"bytes,13,opt,name=metrics_provider,json=metricsProvider,proto3" json:"metrics_provider,omitempty"`
+	MetricsError       string                 `protobuf:"bytes,14,opt,name=metrics_error,json=metricsError,proto3" json:"metrics_error,omitempty"`    // Non-empty when metrics collection failed
+	ForecastError      string                 `protobuf:"bytes,15,opt,name=forecast_error,json=forecastError,proto3" json:"forecast_error,omitempty"` // Non-empty when forecast collection failed
+	Capacity           *ClusterCapacity       `protobuf:"bytes,16,opt,name=capacity,proto3" json:"capacity,omitempty"`                                // Eligible node capacity (Algorithm 6)
+	Quota              *QuotaUsage            `protobuf:"bytes,17,opt,name=quota,proto3" json:"quota,omitempty"`                                      // Namespace pods quota
+	PodResources       *PodResources          `protobuf:"bytes,18,opt,name=pod_resources,json=podResources,proto3" json:"pod_resources,omitempty"`    // Declared requests per pod
+	unknownFields      protoimpl.UnknownFields
+	sizeCache          protoimpl.SizeCache
+}
+
+func (x *WorkloadSnapshot) Reset() {
+	*x = WorkloadSnapshot{}
+	mi := &file_data_acquisition_proto_msgTypes[6]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *WorkloadSnapshot) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*WorkloadSnapshot) ProtoMessage() {}
+
+func (x *WorkloadSnapshot) ProtoReflect() protoreflect.Message {
+	mi := &file_data_acquisition_proto_msgTypes[6]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use WorkloadSnapshot.ProtoReflect.Descriptor instead.
+func (*WorkloadSnapshot) Descriptor() ([]byte, []int) {
+	return file_data_acquisition_proto_rawDescGZIP(), []int{6}
+}
+
+func (x *WorkloadSnapshot) GetNamespace() string {
+	if x != nil {
+		return x.Namespace
+	}
+	return ""
+}
+
+func (x *WorkloadSnapshot) GetResourceName() string {
+	if x != nil {
+		return x.ResourceName
+	}
+	return ""
+}
+
+func (x *WorkloadSnapshot) GetObservedAt() int64 {
+	if x != nil {
+		return x.ObservedAt
+	}
+	return 0
+}
+
+func (x *WorkloadSnapshot) GetResourceVersion() string {
+	if x != nil {
+		return x.ResourceVersion
+	}
+	return ""
+}
+
+func (x *WorkloadSnapshot) GetDesiredReplicas() int32 {
+	if x != nil {
+		return x.DesiredReplicas
+	}
+	return 0
+}
+
+func (x *WorkloadSnapshot) GetReadyReplicas() int32 {
+	if x != nil {
+		return x.ReadyReplicas
+	}
+	return 0
+}
+
+func (x *WorkloadSnapshot) GetObservedGeneration() int64 {
+	if x != nil {
+		return x.ObservedGeneration
+	}
+	return 0
+}
+
+func (x *WorkloadSnapshot) GetPods() *PodStatusSummary {
+	if x != nil {
+		return x.Pods
+	}
+	return nil
+}
+
+func (x *WorkloadSnapshot) GetCpuUtilization() float64 {
+	if x != nil {
+		return x.CpuUtilization
+	}
+	return 0
+}
+
+func (x *WorkloadSnapshot) GetMemoryUtilization() float64 {
+	if x != nil {
+		return x.MemoryUtilization
+	}
+	return 0
+}
+
+func (x *WorkloadSnapshot) GetForecast() []*ForecastPoint {
+	if x != nil {
+		return x.Forecast
+	}
+	return nil
+}
+
+func (x *WorkloadSnapshot) GetForecastProvider() string {
+	if x != nil {
+		return x.ForecastProvider
+	}
+	return ""
+}
+
+func (x *WorkloadSnapshot) GetMetricsProvider() string {
+	if x != nil {
+		return x.MetricsProvider
+	}
+	return ""
+}
+
+func (x *WorkloadSnapshot) GetMetricsError() string {
+	if x != nil {
+		return x.MetricsError
+	}
+	return ""
+}
+
+func (x *WorkloadSnapshot) GetForecastError() string {
+	if x != nil {
+		return x.ForecastError
+	}
+	return ""
+}
+
+func (x *WorkloadSnapshot) GetCapacity() *ClusterCapacity {
+	if x != nil {
+		return x.Capacity
+	}
+	return nil
+}
+
+func (x *WorkloadSnapshot) GetQuota() *QuotaUsage {
+	if x != nil {
+		return x.Quota
+	}
+	return nil
+}
+
+func (x *WorkloadSnapshot) GetPodResources() *PodResources {
+	if x != nil {
+		return x.PodResources
+	}
+	return nil
+}
+
 // Request for workload prediction
 type WorkloadPredictionRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
@@ -33,7 +616,7 @@ type WorkloadPredictionRequest struct {
 
 func (x *WorkloadPredictionRequest) Reset() {
 	*x = WorkloadPredictionRequest{}
-	mi := &file_data_acquisition_proto_msgTypes[0]
+	mi := &file_data_acquisition_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -45,7 +628,7 @@ func (x *WorkloadPredictionRequest) String() string {
 func (*WorkloadPredictionRequest) ProtoMessage() {}
 
 func (x *WorkloadPredictionRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_data_acquisition_proto_msgTypes[0]
+	mi := &file_data_acquisition_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -58,7 +641,7 @@ func (x *WorkloadPredictionRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use WorkloadPredictionRequest.ProtoReflect.Descriptor instead.
 func (*WorkloadPredictionRequest) Descriptor() ([]byte, []int) {
-	return file_data_acquisition_proto_rawDescGZIP(), []int{0}
+	return file_data_acquisition_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *WorkloadPredictionRequest) GetWorkloadId() string {
@@ -97,7 +680,7 @@ type WorkloadPredictionResponse struct {
 
 func (x *WorkloadPredictionResponse) Reset() {
 	*x = WorkloadPredictionResponse{}
-	mi := &file_data_acquisition_proto_msgTypes[1]
+	mi := &file_data_acquisition_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -109,7 +692,7 @@ func (x *WorkloadPredictionResponse) String() string {
 func (*WorkloadPredictionResponse) ProtoMessage() {}
 
 func (x *WorkloadPredictionResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_data_acquisition_proto_msgTypes[1]
+	mi := &file_data_acquisition_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -122,7 +705,7 @@ func (x *WorkloadPredictionResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use WorkloadPredictionResponse.ProtoReflect.Descriptor instead.
 func (*WorkloadPredictionResponse) Descriptor() ([]byte, []int) {
-	return file_data_acquisition_proto_rawDescGZIP(), []int{1}
+	return file_data_acquisition_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *WorkloadPredictionResponse) GetWorkloadId() string {
@@ -176,7 +759,7 @@ type ClusterMetricsRequest struct {
 
 func (x *ClusterMetricsRequest) Reset() {
 	*x = ClusterMetricsRequest{}
-	mi := &file_data_acquisition_proto_msgTypes[2]
+	mi := &file_data_acquisition_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -188,7 +771,7 @@ func (x *ClusterMetricsRequest) String() string {
 func (*ClusterMetricsRequest) ProtoMessage() {}
 
 func (x *ClusterMetricsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_data_acquisition_proto_msgTypes[2]
+	mi := &file_data_acquisition_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -201,7 +784,7 @@ func (x *ClusterMetricsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ClusterMetricsRequest.ProtoReflect.Descriptor instead.
 func (*ClusterMetricsRequest) Descriptor() ([]byte, []int) {
-	return file_data_acquisition_proto_rawDescGZIP(), []int{2}
+	return file_data_acquisition_proto_rawDescGZIP(), []int{9}
 }
 
 // Response containing cluster metrics
@@ -219,7 +802,7 @@ type ClusterMetricsResponse struct {
 
 func (x *ClusterMetricsResponse) Reset() {
 	*x = ClusterMetricsResponse{}
-	mi := &file_data_acquisition_proto_msgTypes[3]
+	mi := &file_data_acquisition_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -231,7 +814,7 @@ func (x *ClusterMetricsResponse) String() string {
 func (*ClusterMetricsResponse) ProtoMessage() {}
 
 func (x *ClusterMetricsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_data_acquisition_proto_msgTypes[3]
+	mi := &file_data_acquisition_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -244,7 +827,7 @@ func (x *ClusterMetricsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ClusterMetricsResponse.ProtoReflect.Descriptor instead.
 func (*ClusterMetricsResponse) Descriptor() ([]byte, []int) {
-	return file_data_acquisition_proto_rawDescGZIP(), []int{3}
+	return file_data_acquisition_proto_rawDescGZIP(), []int{10}
 }
 
 func (x *ClusterMetricsResponse) GetTimestamp() int64 {
@@ -300,7 +883,7 @@ type WorkloadPredictionSubscriptionRequest struct {
 
 func (x *WorkloadPredictionSubscriptionRequest) Reset() {
 	*x = WorkloadPredictionSubscriptionRequest{}
-	mi := &file_data_acquisition_proto_msgTypes[4]
+	mi := &file_data_acquisition_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -312,7 +895,7 @@ func (x *WorkloadPredictionSubscriptionRequest) String() string {
 func (*WorkloadPredictionSubscriptionRequest) ProtoMessage() {}
 
 func (x *WorkloadPredictionSubscriptionRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_data_acquisition_proto_msgTypes[4]
+	mi := &file_data_acquisition_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -325,7 +908,7 @@ func (x *WorkloadPredictionSubscriptionRequest) ProtoReflect() protoreflect.Mess
 
 // Deprecated: Use WorkloadPredictionSubscriptionRequest.ProtoReflect.Descriptor instead.
 func (*WorkloadPredictionSubscriptionRequest) Descriptor() ([]byte, []int) {
-	return file_data_acquisition_proto_rawDescGZIP(), []int{4}
+	return file_data_acquisition_proto_rawDescGZIP(), []int{11}
 }
 
 func (x *WorkloadPredictionSubscriptionRequest) GetWorkloadIds() []string {
@@ -351,7 +934,7 @@ type ClusterMetricsSubscriptionRequest struct {
 
 func (x *ClusterMetricsSubscriptionRequest) Reset() {
 	*x = ClusterMetricsSubscriptionRequest{}
-	mi := &file_data_acquisition_proto_msgTypes[5]
+	mi := &file_data_acquisition_proto_msgTypes[12]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -363,7 +946,7 @@ func (x *ClusterMetricsSubscriptionRequest) String() string {
 func (*ClusterMetricsSubscriptionRequest) ProtoMessage() {}
 
 func (x *ClusterMetricsSubscriptionRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_data_acquisition_proto_msgTypes[5]
+	mi := &file_data_acquisition_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -376,14 +959,67 @@ func (x *ClusterMetricsSubscriptionRequest) ProtoReflect() protoreflect.Message 
 
 // Deprecated: Use ClusterMetricsSubscriptionRequest.ProtoReflect.Descriptor instead.
 func (*ClusterMetricsSubscriptionRequest) Descriptor() ([]byte, []int) {
-	return file_data_acquisition_proto_rawDescGZIP(), []int{5}
+	return file_data_acquisition_proto_rawDescGZIP(), []int{12}
 }
 
 var File_data_acquisition_proto protoreflect.FileDescriptor
 
 const file_data_acquisition_proto_rawDesc = "" +
 	"\n" +
-	"\x16data_acquisition.proto\x12\x0fdataacquisition\"v\n" +
+	"\x16data_acquisition.proto\x12\x0fdataacquisition\"\xa2\x01\n" +
+	"\rForecastPoint\x12\x1c\n" +
+	"\ttimestamp\x18\x01 \x01(\x03R\ttimestamp\x12#\n" +
+	"\rpredicted_cpu\x18\x02 \x01(\x01R\fpredictedCpu\x12)\n" +
+	"\x10predicted_memory\x18\x03 \x01(\x01R\x0fpredictedMemory\x12#\n" +
+	"\rpredicted_rps\x18\x04 \x01(\x01R\fpredictedRps\"\x9e\x01\n" +
+	"\x10PodStatusSummary\x12\x1d\n" +
+	"\n" +
+	"total_pods\x18\x01 \x01(\x05R\ttotalPods\x12\x1d\n" +
+	"\n" +
+	"ready_pods\x18\x02 \x01(\x05R\treadyPods\x12!\n" +
+	"\fpending_pods\x18\x03 \x01(\x05R\vpendingPods\x12)\n" +
+	"\x10terminating_pods\x18\x04 \x01(\x05R\x0fterminatingPods\"\x9e\x01\n" +
+	"\x0fClusterCapacity\x12\x1d\n" +
+	"\n" +
+	"node_count\x18\x01 \x01(\x05R\tnodeCount\x122\n" +
+	"\x15allocatable_cpu_cores\x18\x02 \x01(\x01R\x13allocatableCpuCores\x128\n" +
+	"\x18allocatable_memory_bytes\x18\x03 \x01(\x01R\x16allocatableMemoryBytes\"D\n" +
+	"\n" +
+	"QuotaUsage\x12\x1b\n" +
+	"\thas_quota\x18\x01 \x01(\bR\bhasQuota\x12\x19\n" +
+	"\bmax_pods\x18\x02 \x01(\x05R\amaxPods\"N\n" +
+	"\fPodResources\x12\x1b\n" +
+	"\tcpu_cores\x18\x01 \x01(\x01R\bcpuCores\x12!\n" +
+	"\fmemory_bytes\x18\x02 \x01(\x01R\vmemoryBytes\"\xb8\x02\n" +
+	"\x17WorkloadSnapshotRequest\x12\x1c\n" +
+	"\tnamespace\x18\x01 \x01(\tR\tnamespace\x12#\n" +
+	"\rresource_name\x18\x02 \x01(\tR\fresourceName\x128\n" +
+	"\x18forecast_horizon_seconds\x18\x03 \x01(\x05R\x16forecastHorizonSeconds\x12)\n" +
+	"\x10metrics_provider\x18\x04 \x01(\tR\x0fmetricsProvider\x12%\n" +
+	"\x0eprometheus_url\x18\x05 \x01(\tR\rprometheusUrl\x12+\n" +
+	"\x11forecast_provider\x18\x06 \x01(\tR\x10forecastProvider\x12!\n" +
+	"\fforecast_url\x18\a \x01(\tR\vforecastUrl\"\xc8\x06\n" +
+	"\x10WorkloadSnapshot\x12\x1c\n" +
+	"\tnamespace\x18\x01 \x01(\tR\tnamespace\x12#\n" +
+	"\rresource_name\x18\x02 \x01(\tR\fresourceName\x12\x1f\n" +
+	"\vobserved_at\x18\x03 \x01(\x03R\n" +
+	"observedAt\x12)\n" +
+	"\x10resource_version\x18\x04 \x01(\tR\x0fresourceVersion\x12)\n" +
+	"\x10desired_replicas\x18\x05 \x01(\x05R\x0fdesiredReplicas\x12%\n" +
+	"\x0eready_replicas\x18\x06 \x01(\x05R\rreadyReplicas\x12/\n" +
+	"\x13observed_generation\x18\a \x01(\x03R\x12observedGeneration\x125\n" +
+	"\x04pods\x18\b \x01(\v2!.dataacquisition.PodStatusSummaryR\x04pods\x12'\n" +
+	"\x0fcpu_utilization\x18\t \x01(\x01R\x0ecpuUtilization\x12-\n" +
+	"\x12memory_utilization\x18\n" +
+	" \x01(\x01R\x11memoryUtilization\x12:\n" +
+	"\bforecast\x18\v \x03(\v2\x1e.dataacquisition.ForecastPointR\bforecast\x12+\n" +
+	"\x11forecast_provider\x18\f \x01(\tR\x10forecastProvider\x12)\n" +
+	"\x10metrics_provider\x18\r \x01(\tR\x0fmetricsProvider\x12#\n" +
+	"\rmetrics_error\x18\x0e \x01(\tR\fmetricsError\x12%\n" +
+	"\x0eforecast_error\x18\x0f \x01(\tR\rforecastError\x12<\n" +
+	"\bcapacity\x18\x10 \x01(\v2 .dataacquisition.ClusterCapacityR\bcapacity\x121\n" +
+	"\x05quota\x18\x11 \x01(\v2\x1b.dataacquisition.QuotaUsageR\x05quota\x12B\n" +
+	"\rpod_resources\x18\x12 \x01(\v2\x1d.dataacquisition.PodResourcesR\fpodResources\"v\n" +
 	"\x19WorkloadPredictionRequest\x12\x1f\n" +
 	"\vworkload_id\x18\x01 \x01(\tR\n" +
 	"workloadId\x12\x1d\n" +
@@ -411,12 +1047,13 @@ const file_data_acquisition_proto_rawDesc = "" +
 	"\fworkload_ids\x18\x01 \x03(\tR\vworkloadIds\x12\x1d\n" +
 	"\n" +
 	"start_time\x18\x02 \x01(\x03R\tstartTime\"#\n" +
-	"!ClusterMetricsSubscriptionRequest2\xf2\x03\n" +
+	"!ClusterMetricsSubscriptionRequest2\xd6\x04\n" +
 	"\x16DataAcquisitionService\x12p\n" +
 	"\x15GetWorkloadPrediction\x12*.dataacquisition.WorkloadPredictionRequest\x1a+.dataacquisition.WorkloadPredictionResponse\x12d\n" +
 	"\x11GetClusterMetrics\x12&.dataacquisition.ClusterMetricsRequest\x1a'.dataacquisition.ClusterMetricsResponse\x12\x85\x01\n" +
 	"\x1cSubscribeWorkloadPredictions\x126.dataacquisition.WorkloadPredictionSubscriptionRequest\x1a+.dataacquisition.WorkloadPredictionResponse0\x01\x12x\n" +
-	"\x17SubscribeClusterMetrics\x122.dataacquisition.ClusterMetricsSubscriptionRequest\x1a'.dataacquisition.ClusterMetricsResponse0\x01b\x06proto3"
+	"\x17SubscribeClusterMetrics\x122.dataacquisition.ClusterMetricsSubscriptionRequest\x1a'.dataacquisition.ClusterMetricsResponse0\x01\x12b\n" +
+	"\x13GetWorkloadSnapshot\x12(.dataacquisition.WorkloadSnapshotRequest\x1a!.dataacquisition.WorkloadSnapshotb\x06proto3"
 
 var (
 	file_data_acquisition_proto_rawDescOnce sync.Once
@@ -430,29 +1067,43 @@ func file_data_acquisition_proto_rawDescGZIP() []byte {
 	return file_data_acquisition_proto_rawDescData
 }
 
-var file_data_acquisition_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
+var file_data_acquisition_proto_msgTypes = make([]protoimpl.MessageInfo, 13)
 var file_data_acquisition_proto_goTypes = []any{
-	(*WorkloadPredictionRequest)(nil),             // 0: dataacquisition.WorkloadPredictionRequest
-	(*WorkloadPredictionResponse)(nil),            // 1: dataacquisition.WorkloadPredictionResponse
-	(*ClusterMetricsRequest)(nil),                 // 2: dataacquisition.ClusterMetricsRequest
-	(*ClusterMetricsResponse)(nil),                // 3: dataacquisition.ClusterMetricsResponse
-	(*WorkloadPredictionSubscriptionRequest)(nil), // 4: dataacquisition.WorkloadPredictionSubscriptionRequest
-	(*ClusterMetricsSubscriptionRequest)(nil),     // 5: dataacquisition.ClusterMetricsSubscriptionRequest
+	(*ForecastPoint)(nil),                         // 0: dataacquisition.ForecastPoint
+	(*PodStatusSummary)(nil),                      // 1: dataacquisition.PodStatusSummary
+	(*ClusterCapacity)(nil),                       // 2: dataacquisition.ClusterCapacity
+	(*QuotaUsage)(nil),                            // 3: dataacquisition.QuotaUsage
+	(*PodResources)(nil),                          // 4: dataacquisition.PodResources
+	(*WorkloadSnapshotRequest)(nil),               // 5: dataacquisition.WorkloadSnapshotRequest
+	(*WorkloadSnapshot)(nil),                      // 6: dataacquisition.WorkloadSnapshot
+	(*WorkloadPredictionRequest)(nil),             // 7: dataacquisition.WorkloadPredictionRequest
+	(*WorkloadPredictionResponse)(nil),            // 8: dataacquisition.WorkloadPredictionResponse
+	(*ClusterMetricsRequest)(nil),                 // 9: dataacquisition.ClusterMetricsRequest
+	(*ClusterMetricsResponse)(nil),                // 10: dataacquisition.ClusterMetricsResponse
+	(*WorkloadPredictionSubscriptionRequest)(nil), // 11: dataacquisition.WorkloadPredictionSubscriptionRequest
+	(*ClusterMetricsSubscriptionRequest)(nil),     // 12: dataacquisition.ClusterMetricsSubscriptionRequest
 }
 var file_data_acquisition_proto_depIdxs = []int32{
-	0, // 0: dataacquisition.DataAcquisitionService.GetWorkloadPrediction:input_type -> dataacquisition.WorkloadPredictionRequest
-	2, // 1: dataacquisition.DataAcquisitionService.GetClusterMetrics:input_type -> dataacquisition.ClusterMetricsRequest
-	4, // 2: dataacquisition.DataAcquisitionService.SubscribeWorkloadPredictions:input_type -> dataacquisition.WorkloadPredictionSubscriptionRequest
-	5, // 3: dataacquisition.DataAcquisitionService.SubscribeClusterMetrics:input_type -> dataacquisition.ClusterMetricsSubscriptionRequest
-	1, // 4: dataacquisition.DataAcquisitionService.GetWorkloadPrediction:output_type -> dataacquisition.WorkloadPredictionResponse
-	3, // 5: dataacquisition.DataAcquisitionService.GetClusterMetrics:output_type -> dataacquisition.ClusterMetricsResponse
-	1, // 6: dataacquisition.DataAcquisitionService.SubscribeWorkloadPredictions:output_type -> dataacquisition.WorkloadPredictionResponse
-	3, // 7: dataacquisition.DataAcquisitionService.SubscribeClusterMetrics:output_type -> dataacquisition.ClusterMetricsResponse
-	4, // [4:8] is the sub-list for method output_type
-	0, // [0:4] is the sub-list for method input_type
-	0, // [0:0] is the sub-list for extension type_name
-	0, // [0:0] is the sub-list for extension extendee
-	0, // [0:0] is the sub-list for field type_name
+	1,  // 0: dataacquisition.WorkloadSnapshot.pods:type_name -> dataacquisition.PodStatusSummary
+	0,  // 1: dataacquisition.WorkloadSnapshot.forecast:type_name -> dataacquisition.ForecastPoint
+	2,  // 2: dataacquisition.WorkloadSnapshot.capacity:type_name -> dataacquisition.ClusterCapacity
+	3,  // 3: dataacquisition.WorkloadSnapshot.quota:type_name -> dataacquisition.QuotaUsage
+	4,  // 4: dataacquisition.WorkloadSnapshot.pod_resources:type_name -> dataacquisition.PodResources
+	7,  // 5: dataacquisition.DataAcquisitionService.GetWorkloadPrediction:input_type -> dataacquisition.WorkloadPredictionRequest
+	9,  // 6: dataacquisition.DataAcquisitionService.GetClusterMetrics:input_type -> dataacquisition.ClusterMetricsRequest
+	11, // 7: dataacquisition.DataAcquisitionService.SubscribeWorkloadPredictions:input_type -> dataacquisition.WorkloadPredictionSubscriptionRequest
+	12, // 8: dataacquisition.DataAcquisitionService.SubscribeClusterMetrics:input_type -> dataacquisition.ClusterMetricsSubscriptionRequest
+	5,  // 9: dataacquisition.DataAcquisitionService.GetWorkloadSnapshot:input_type -> dataacquisition.WorkloadSnapshotRequest
+	8,  // 10: dataacquisition.DataAcquisitionService.GetWorkloadPrediction:output_type -> dataacquisition.WorkloadPredictionResponse
+	10, // 11: dataacquisition.DataAcquisitionService.GetClusterMetrics:output_type -> dataacquisition.ClusterMetricsResponse
+	8,  // 12: dataacquisition.DataAcquisitionService.SubscribeWorkloadPredictions:output_type -> dataacquisition.WorkloadPredictionResponse
+	10, // 13: dataacquisition.DataAcquisitionService.SubscribeClusterMetrics:output_type -> dataacquisition.ClusterMetricsResponse
+	6,  // 14: dataacquisition.DataAcquisitionService.GetWorkloadSnapshot:output_type -> dataacquisition.WorkloadSnapshot
+	10, // [10:15] is the sub-list for method output_type
+	5,  // [5:10] is the sub-list for method input_type
+	5,  // [5:5] is the sub-list for extension type_name
+	5,  // [5:5] is the sub-list for extension extendee
+	0,  // [0:5] is the sub-list for field type_name
 }
 
 func init() { file_data_acquisition_proto_init() }
@@ -466,7 +1117,7 @@ func file_data_acquisition_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_data_acquisition_proto_rawDesc), len(file_data_acquisition_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   6,
+			NumMessages:   13,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

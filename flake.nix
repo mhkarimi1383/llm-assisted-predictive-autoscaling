@@ -23,13 +23,17 @@
               protobuf
               protoc-gen-go
               protoc-gen-go-grpc
-              python3Packages.grpcio-tools
-              python3Packages.grpcio   # Added for gRPC runtime
+              kind                     # local Kubernetes clusters for testing
+              kubectl                  # cluster inspection and manifest application
+              # Python gRPC tooling comes from the project uv venv
+              # (.venv) to avoid nixpkgs PYTHONPATH shadowing it.
             ];
             shellHook = ''
-              # Go environment setup
+              # Go environment setup.
+              # GOPATH lives outside the repository so the module cache
+              # is never mistaken for project sources by go commands.
               export GO111MODULE=on
-              export GOPATH=$PWD/go
+              export GOPATH=''${XDG_CACHE_HOME:-$HOME/.cache}/llm-autoscaler-go
               export PATH=$PATH:$GOPATH/bin
 
               # Python environment with uv
@@ -44,17 +48,17 @@
 
           # Go-only shell
           go = pkgs.mkShell {
-            packages = with pkgs; [ go git ];
+            packages = with pkgs; [ go git kind kubectl ];
             shellHook = ''
               export GO111MODULE=on
-              export GOPATH=$PWD/go
+              export GOPATH=''${XDG_CACHE_HOME:-$HOME/.cache}/llm-autoscaler-go
               export PATH=$PATH:$GOPATH/bin
             '';
           };
 
           # Python-only shell with uv
           python = pkgs.mkShell {
-            packages = with pkgs; [ python3 uv git protobuf protoc-gen-go python3Packages.grpcio-tools python3Packages.grpcio ];
+            packages = with pkgs; [ python3 uv git protobuf protoc-gen-go ];
             shellHook = ''
               # If a uv virtual environment exists in .venv, activate it
               if [ -f "$PWD/.venv/bin/activate" ]; then
@@ -66,5 +70,12 @@
           };
         };
       }
-    );
+    ) // {
+      # NixOS test VM used by deploy/dev/vm-test.sh. Started with:
+      #   nixos-shell --flake .#vm --impure
+      nixosConfigurations.vm = nixpkgs.lib.nixosSystem {
+        system = "x86_64-linux";
+        modules = [ ./vm.nix ];
+      };
+    };
 }

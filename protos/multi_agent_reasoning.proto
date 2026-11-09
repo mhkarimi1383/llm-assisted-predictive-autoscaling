@@ -9,8 +9,50 @@ service MultiAgentReasoningService {
   // Perform reasoning on a given prompt
   rpc Reason (ReasoningRequest) returns (ReasoningResponse);
 
+  // Multi-agent scaling analysis (Algorithms 3 to 5): run the
+  // specialist analysts in parallel over a shared snapshot, aggregate
+  // their validated results with weighted voting, and synthesize an
+  // explanation for the fixed recommendation.
+  rpc ReasonScaling (ReasonScalingRequest) returns (ReasonScalingResponse);
+
   // Get the current status of the reasoning component
   rpc GetStatus (google.protobuf.Empty) returns (StatusResponse);
+}
+
+// One analyst outcome: an action with a target, an abstention, or a
+// validation failure (Algorithm 4)
+message AnalystResult {
+  string role = 1; // forecast, status, policy, or history
+  string action = 2; // SCALE_UP, SCALE_DOWN, or HOLD; empty on abstention/failure
+  int32 target = 3; // Proposed replica count; 0 on abstention/failure
+  double confidence = 4; // Self-reported confidence in [0,1]
+  string rationale = 5; // Concise justification citing snapshot evidence
+  string abstention_reason = 6; // Non-empty when the analyst abstained
+  string error = 7; // Non-empty when the result failed validation
+}
+
+// Aggregated recommendation with voting summary (Algorithm 5)
+message ScalingRecommendation {
+  bool has_recommendation = 1; // False when quorum, majority, or confidence failed
+  string no_recommendation_reason = 2; // Reason when has_recommendation is false
+  string action = 3; // SCALE_UP, SCALE_DOWN, or HOLD
+  int32 target = 4; // Weighted median of winning targets
+  double confidence = 5; // Lesser of support and mean winning confidence
+  string rationale = 6; // Synthesizer explanation or deterministic voting summary
+  string aggregation_summary = 7; // Deterministic vote summary for audit
+}
+
+// Request for the scaling reasoning pipeline
+message ReasonScalingRequest {
+  string request_id = 1;
+  string snapshot_json = 2; // Shared decision snapshot (WorkloadSnapshot serialized)
+  string config_json = 3; // min/max replicas, quorum, weights, confidence threshold
+}
+
+// Response of the scaling reasoning pipeline
+message ReasonScalingResponse {
+  repeated AnalystResult analyst_results = 1; // All outcomes by role, including abstentions
+  ScalingRecommendation recommendation = 2; // Fixed recommendation for safety evaluation
 }
 
 // Request for reasoning

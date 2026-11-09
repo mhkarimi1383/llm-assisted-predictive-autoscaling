@@ -23,7 +23,8 @@ message ScalingDecision {
   string resource_name = 2;
   string namespace = 3;
   int32 replica_count = 4; // Desired replica count
-  // Additional parameters can be added as needed
+  bool dry_run = 5; // Record the checked step without submitting it (Algorithm 7)
+  string request_id = 6; // Decision cycle identifier for audit and idempotency
 }
 
 // Response for executing a scaling decision
@@ -31,6 +32,9 @@ message ScalingResult {
   bool success = 1;
   string message = 2;
   int64 timestamp = 3; // Unix timestamp when the action was completed
+  int32 from_replicas = 4; // Replica count observed before the write
+  int32 to_replicas = 5; // Replica count submitted
+  bool dry_run = 6; // True when the step was recorded without submission
 }
 
 // Request for getting scaling status

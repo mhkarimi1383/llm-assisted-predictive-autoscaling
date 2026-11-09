@@ -20,8 +20,9 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	MultiAgentReasoningService_Reason_FullMethodName    = "/multianalreasoning.MultiAgentReasoningService/Reason"
-	MultiAgentReasoningService_GetStatus_FullMethodName = "/multianalreasoning.MultiAgentReasoningService/GetStatus"
+	MultiAgentReasoningService_Reason_FullMethodName        = "/multianalreasoning.MultiAgentReasoningService/Reason"
+	MultiAgentReasoningService_ReasonScaling_FullMethodName = "/multianalreasoning.MultiAgentReasoningService/ReasonScaling"
+	MultiAgentReasoningService_GetStatus_FullMethodName     = "/multianalreasoning.MultiAgentReasoningService/GetStatus"
 )
 
 // MultiAgentReasoningServiceClient is the client API for MultiAgentReasoningService service.
@@ -32,6 +33,11 @@ const (
 type MultiAgentReasoningServiceClient interface {
 	// Perform reasoning on a given prompt
 	Reason(ctx context.Context, in *ReasoningRequest, opts ...grpc.CallOption) (*ReasoningResponse, error)
+	// Multi-agent scaling analysis (Algorithms 3 to 5): run the
+	// specialist analysts in parallel over a shared snapshot, aggregate
+	// their validated results with weighted voting, and synthesize an
+	// explanation for the fixed recommendation.
+	ReasonScaling(ctx context.Context, in *ReasonScalingRequest, opts ...grpc.CallOption) (*ReasonScalingResponse, error)
 	// Get the current status of the reasoning component
 	GetStatus(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*StatusResponse, error)
 }
@@ -48,6 +54,16 @@ func (c *multiAgentReasoningServiceClient) Reason(ctx context.Context, in *Reaso
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(ReasoningResponse)
 	err := c.cc.Invoke(ctx, MultiAgentReasoningService_Reason_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *multiAgentReasoningServiceClient) ReasonScaling(ctx context.Context, in *ReasonScalingRequest, opts ...grpc.CallOption) (*ReasonScalingResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ReasonScalingResponse)
+	err := c.cc.Invoke(ctx, MultiAgentReasoningService_ReasonScaling_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -72,6 +88,11 @@ func (c *multiAgentReasoningServiceClient) GetStatus(ctx context.Context, in *em
 type MultiAgentReasoningServiceServer interface {
 	// Perform reasoning on a given prompt
 	Reason(context.Context, *ReasoningRequest) (*ReasoningResponse, error)
+	// Multi-agent scaling analysis (Algorithms 3 to 5): run the
+	// specialist analysts in parallel over a shared snapshot, aggregate
+	// their validated results with weighted voting, and synthesize an
+	// explanation for the fixed recommendation.
+	ReasonScaling(context.Context, *ReasonScalingRequest) (*ReasonScalingResponse, error)
 	// Get the current status of the reasoning component
 	GetStatus(context.Context, *emptypb.Empty) (*StatusResponse, error)
 	mustEmbedUnimplementedMultiAgentReasoningServiceServer()
@@ -86,6 +107,9 @@ type UnimplementedMultiAgentReasoningServiceServer struct{}
 
 func (UnimplementedMultiAgentReasoningServiceServer) Reason(context.Context, *ReasoningRequest) (*ReasoningResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method Reason not implemented")
+}
+func (UnimplementedMultiAgentReasoningServiceServer) ReasonScaling(context.Context, *ReasonScalingRequest) (*ReasonScalingResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ReasonScaling not implemented")
 }
 func (UnimplementedMultiAgentReasoningServiceServer) GetStatus(context.Context, *emptypb.Empty) (*StatusResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetStatus not implemented")
@@ -130,6 +154,24 @@ func _MultiAgentReasoningService_Reason_Handler(srv interface{}, ctx context.Con
 	return interceptor(ctx, in, info, handler)
 }
 
+func _MultiAgentReasoningService_ReasonScaling_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ReasonScalingRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MultiAgentReasoningServiceServer).ReasonScaling(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: MultiAgentReasoningService_ReasonScaling_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MultiAgentReasoningServiceServer).ReasonScaling(ctx, req.(*ReasonScalingRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _MultiAgentReasoningService_GetStatus_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(emptypb.Empty)
 	if err := dec(in); err != nil {
@@ -158,6 +200,10 @@ var MultiAgentReasoningService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "Reason",
 			Handler:    _MultiAgentReasoningService_Reason_Handler,
+		},
+		{
+			MethodName: "ReasonScaling",
+			Handler:    _MultiAgentReasoningService_ReasonScaling_Handler,
 		},
 		{
 			MethodName: "GetStatus",

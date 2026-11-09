@@ -17,72 +17,77 @@ all: help
 .PHONY: help
 help:
 	@echo "Available targets:"
+	@echo "  generate       - Regenerate protos, deepcopy, CRD, and RBAC manifests"
 	@echo "  build          - Build the binary"
-	@echo "  docker         - Build Docker image"
-	@echo "  run            - Run the application locally"
-	@echo "  docker-run     - Run in Docker container"
-	@echo "  compose-up     - Start development environment with docker-compose"
-	@echo "  compose-down   - Stop development environment"
-	@echo "  test           - Run all tests"
-	@echo "  test-unit      - Run unit tests"
-	@echo "  test-integration - Run integration tests"
+	@echo "  docker         - Build Docker images (Go + Python)"
+	@echo "  kind-up        - Create kind cluster, deploy control plane + demo"
+	@echo "  kind-down      - Delete the kind cluster"
+	@echo "  test           - Run all tests (Go + Python)"
+	@echo "  test-go        - Run Go unit tests"
+	@echo "  test-python    - Run Python unit tests"
 	@echo "  lint           - Run linters"
 	@echo "  fmt            - Format code"
 	@echo "  clean          - Remove build artifacts"
-	@echo "  distclean      - Clean everything including dependencies"
 	@echo "  version        - Show version information"
+
+# Code generation: protos (Go+Python), deepcopy, CRD, RBAC
+.PHONY: generate
+generate:
+	@echo "Generating code..."
+	./scripts/generate_proto.sh
+	go mod tidy
+	controller-gen object paths=./operator/api/...
+	controller-gen crd:allowDangerousTypes=true paths=./operator/... output:crd:artifacts:config=deploy/crd
+	controller-gen rbac:roleName=llm-autoscaler paths={./operator/...,./data_acquisition/...} output:rbac:artifacts:config=deploy/rbac
 
 # Build targets
 .PHONY: build
 build:
 	@echo "Building $(BINARY) version $(VERSION)..."
-	go build $(GO_FLAGS) -o $(BINARY) main.go
+	go build $(GO_FLAGS) -o $(BINARY) .
+
+# Docker targets
+.PHONY: docker
+docker:
+	@echo "Building Docker images..."
+	docker build -t llm-autoscaler:latest .
+	docker build -f Dockerfile.python -t multi-agent-reasoning:latest .
+
+# kind development cluster
+.PHONY: kind-up
+kind-up:
+	./deploy/dev/kind-up.sh
+
+.PHONY: kind-down
+kind-down:
+	kind delete cluster --name llm-autoscaler || true
+
+# Test targets
+.PHONY: test
+test: test-go test-python
+
+.PHONY: test-go
+test-go:
+	go test ./...
+
+.PHONY: test-python
+test-python:
+	.venv/bin/python -m pytest tests/ -q
+
+# Run the test suite inside the NixOS test VM (vm.nix).
+.PHONY: test-vm
+test-vm:
+	./deploy/dev/vm-test.sh
+
+.PHONY: test-vm-kind
+test-vm-kind:
+	./deploy/dev/vm-test.sh --kind
 
 .PHONY: docker
 docker:
 	@echo "Building Docker image $(DOCKER_IMAGE)..."
 	docker build -t $(DOCKER_IMAGE) .
 	docker tag $(DOCKER_IMAGE) $(DOCKER_LATEST)
-
-# Run targets
-.PHONY: run
-run: build
-	@echo "Running $(BINARY)..."
-	./$(BINARY)
-
-.PHONY: docker-run
-docker-run: docker
-	@echo "Running $(BINARY) in Docker..."
-	docker run --rm \
-		-p 8080:8080 -p 9090:9090 \
-		-e LLM_API_KEY -e REDIS_PASSWORD \
-		-v $(PWD)/config.yaml:/etc/llm-autoscaler/config.yaml:ro \
-		$(DOCKER_IMAGE)
-
-# Docker Compose targets
-.PHONY: compose-up
-compose-up:
-	@echo "Starting development environment..."
-	docker-compose up -d
-
-.PHONY: compose-down
-compose-down:
-	@echo "Stopping development environment..."
-	docker-compose down
-
-# Testing targets
-.PHONY: test
-test: test-unit test-integration
-
-.PHONY: test-unit
-test-unit:
-	@echo "Running unit tests..."
-	go test ./... -short -v
-
-.PHONY: test-integration
-test-integration:
-	@echo "Running integration tests..."
-	go test ./... -tags=integration -v
 
 # Code quality targets
 .PHONY: lint
@@ -99,15 +104,7 @@ lint:
 .PHONY: fmt
 fmt:
 	@echo "Formatting code..."
-	go fmt ./ PDA
-	@echo "Running goimports..."
-	@if command -v goimports >/dev/null 2>&1; then \
-		goimports -w .; \
-	else \
-		echo "goimports not installed. Installing..."; \
-		go install golang.org/x/tools/cmd/goimports@latest; \
-		goimports -w .; \
-	fi
+	gofmt -w .
 
 # Clean targets
 .PHONY: clean

@@ -41,6 +41,11 @@ class MultiAgentReasoningServiceStub:
                 request_serializer=multi__agent__reasoning__pb2.ReasoningRequest.SerializeToString,
                 response_deserializer=multi__agent__reasoning__pb2.ReasoningResponse.FromString,
                 _registered_method=True)
+        self.ReasonScaling = channel.unary_unary(
+                '/multianalreasoning.MultiAgentReasoningService/ReasonScaling',
+                request_serializer=multi__agent__reasoning__pb2.ReasonScalingRequest.SerializeToString,
+                response_deserializer=multi__agent__reasoning__pb2.ReasonScalingResponse.FromString,
+                _registered_method=True)
         self.GetStatus = channel.unary_unary(
                 '/multianalreasoning.MultiAgentReasoningService/GetStatus',
                 request_serializer=google_dot_protobuf_dot_empty__pb2.Empty.SerializeToString,
@@ -54,6 +59,16 @@ class MultiAgentReasoningServiceServicer:
 
     def Reason(self, request, context):
         """Perform reasoning on a given prompt
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def ReasonScaling(self, request, context):
+        """Multi-agent scaling analysis (Algorithms 3 to 5): run the
+        specialist analysts in parallel over a shared snapshot, aggregate
+        their validated results with weighted voting, and synthesize an
+        explanation for the fixed recommendation.
         """
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
@@ -73,6 +88,11 @@ def add_MultiAgentReasoningServiceServicer_to_server(servicer, server):
                     servicer.Reason,
                     request_deserializer=multi__agent__reasoning__pb2.ReasoningRequest.FromString,
                     response_serializer=multi__agent__reasoning__pb2.ReasoningResponse.SerializeToString,
+            ),
+            'ReasonScaling': grpc.unary_unary_rpc_method_handler(
+                    servicer.ReasonScaling,
+                    request_deserializer=multi__agent__reasoning__pb2.ReasonScalingRequest.FromString,
+                    response_serializer=multi__agent__reasoning__pb2.ReasonScalingResponse.SerializeToString,
             ),
             'GetStatus': grpc.unary_unary_rpc_method_handler(
                     servicer.GetStatus,
@@ -108,6 +128,33 @@ class MultiAgentReasoningService:
             '/multianalreasoning.MultiAgentReasoningService/Reason',
             multi__agent__reasoning__pb2.ReasoningRequest.SerializeToString,
             multi__agent__reasoning__pb2.ReasoningResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def ReasonScaling(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/multianalreasoning.MultiAgentReasoningService/ReasonScaling',
+            multi__agent__reasoning__pb2.ReasonScalingRequest.SerializeToString,
+            multi__agent__reasoning__pb2.ReasonScalingResponse.FromString,
             options,
             channel_credentials,
             insecure,

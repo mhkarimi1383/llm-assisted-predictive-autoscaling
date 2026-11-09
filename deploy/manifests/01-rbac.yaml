@@ -1,0 +1,19 @@
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: llm-autoscaler
+  namespace: llm-autoscaler-system
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: llm-autoscaler
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: llm-autoscaler
+subjects:
+  - kind: ServiceAccount
+    name: llm-autoscaler
+    namespace: llm-autoscaler-system

@@ -15,6 +15,83 @@ service DataAcquisitionService {
 
   // Subscribe to a stream of cluster metrics
   rpc SubscribeClusterMetrics (ClusterMetricsSubscriptionRequest) returns (stream ClusterMetricsResponse);
+
+  // Collect a decision snapshot for one workload (Algorithm 2): the
+  // workload state, current utilization metrics, and the forecast
+  // over the decision horizon, collected in parallel and validated.
+  rpc GetWorkloadSnapshot (WorkloadSnapshotRequest) returns (WorkloadSnapshot);
+}
+
+// One forecast point of predicted demand over the decision horizon
+message ForecastPoint {
+  int64 timestamp = 1; // Unix timestamp in seconds
+  double predicted_cpu = 2; // Fraction of requested CPU (0..1); negative = unknown
+  double predicted_memory = 3; // Fraction of requested memory (0..1); negative = unknown
+  double predicted_rps = 4; // Requests per second; negative = unknown
+}
+
+// Pod health summary of the target workload
+message PodStatusSummary {
+  int32 total_pods = 1;
+  int32 ready_pods = 2;
+  int32 pending_pods = 3;
+  int32 terminating_pods = 4;
+}
+
+// Eligible cluster capacity for the workload (Algorithm 6 capacity
+// checks): sum of allocatable resources of ready, schedulable nodes.
+message ClusterCapacity {
+  int32 node_count = 1;
+  double allocatable_cpu_cores = 2; // Sum of node allocatable CPU
+  double allocatable_memory_bytes = 3; // Sum of node allocatable memory
+}
+
+// Namespace resource-quota usage relevant to the workload
+message QuotaUsage {
+  bool has_quota = 1; // True when a pods quota applies in the namespace
+  int32 max_pods = 2; // Most restrictive pods quota (hard); 0 when unknown
+}
+
+// Per-pod resource requests of the target workload (declared in the
+// pod template; the basis of utilization and capacity estimates)
+message PodResources {
+  double cpu_cores = 1; // Sum of container CPU requests per pod
+  double memory_bytes = 2; // Sum of container memory requests per pod
+}
+
+// Request for a workload decision snapshot
+message WorkloadSnapshotRequest {
+  string namespace = 1;
+  string resource_name = 2;
+  int32 forecast_horizon_seconds = 3; // Requested forecast horizon; 0 = provider default
+  string metrics_provider = 4; // "metrics-server" | "prometheus"; empty = service default
+  string prometheus_url = 5; // Prometheus base URL when metrics_provider is prometheus
+  string forecast_provider = 6; // "stub" | "rest"; empty = service default
+  string forecast_url = 7; // Predictor URL when forecast_provider is rest
+}
+
+// Decision snapshot consumed by the multi-agent reasoning engine.
+// Utilization values are fractions of requests (0..1); negative
+// means unknown. Error fields are empty when a source succeeded.
+message WorkloadSnapshot {
+  string namespace = 1;
+  string resource_name = 2;
+  int64 observed_at = 3; // Unix timestamp in seconds
+  string resource_version = 4; // resourceVersion of the target at read time
+  int32 desired_replicas = 5; // spec.replicas of the target
+  int32 ready_replicas = 6;
+  int64 observed_generation = 7; // metadata.generation of the target
+  PodStatusSummary pods = 8;
+  double cpu_utilization = 9; // Fraction of requests; negative = unknown
+  double memory_utilization = 10; // Fraction of requests; negative = unknown
+  repeated ForecastPoint forecast = 11;
+  string forecast_provider = 12;
+  string metrics_provider = 13;
+  string metrics_error = 14; // Non-empty when metrics collection failed
+  string forecast_error = 15; // Non-empty when forecast collection failed
+  ClusterCapacity capacity = 16; // Eligible node capacity (Algorithm 6)
+  QuotaUsage quota = 17; // Namespace pods quota
+  PodResources pod_resources = 18; // Declared requests per pod
 }
 
 // Request for workload prediction

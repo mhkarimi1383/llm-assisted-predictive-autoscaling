@@ -21,6 +21,7 @@ const _ = grpc.SupportPackageIsVersion9
 const (
 	LLMInterfaceService_GenerateText_FullMethodName       = "/llminterface.LLMInterfaceService/GenerateText"
 	LLMInterfaceService_GenerateTextStream_FullMethodName = "/llminterface.LLMInterfaceService/GenerateTextStream"
+	LLMInterfaceService_Chat_FullMethodName               = "/llminterface.LLMInterfaceService/Chat"
 	LLMInterfaceService_GetEmbeddings_FullMethodName      = "/llminterface.LLMInterfaceService/GetEmbeddings"
 	LLMInterfaceService_CountTokens_FullMethodName        = "/llminterface.LLMInterfaceService/CountTokens"
 )
@@ -35,6 +36,10 @@ type LLMInterfaceServiceClient interface {
 	GenerateText(ctx context.Context, in *GenerateTextRequest, opts ...grpc.CallOption) (*GenerateTextResponse, error)
 	// Generate text from a prompt with streaming response
 	GenerateTextStream(ctx context.Context, in *GenerateTextRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[GenerateTextResponse], error)
+	// Chat-completions style request against an OpenAI-compatible API
+	// (or the deterministic mock provider). Used by the multi-agent
+	// reasoning engine (Algorithm 3).
+	Chat(ctx context.Context, in *ChatRequest, opts ...grpc.CallOption) (*ChatResponse, error)
 	// Get embeddings for text
 	GetEmbeddings(ctx context.Context, in *EmbeddingsRequest, opts ...grpc.CallOption) (*EmbeddingsResponse, error)
 	// Count tokens in text
@@ -78,6 +83,16 @@ func (c *lLMInterfaceServiceClient) GenerateTextStream(ctx context.Context, in *
 // This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
 type LLMInterfaceService_GenerateTextStreamClient = grpc.ServerStreamingClient[GenerateTextResponse]
 
+func (c *lLMInterfaceServiceClient) Chat(ctx context.Context, in *ChatRequest, opts ...grpc.CallOption) (*ChatResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ChatResponse)
+	err := c.cc.Invoke(ctx, LLMInterfaceService_Chat_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *lLMInterfaceServiceClient) GetEmbeddings(ctx context.Context, in *EmbeddingsRequest, opts ...grpc.CallOption) (*EmbeddingsResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(EmbeddingsResponse)
@@ -108,6 +123,10 @@ type LLMInterfaceServiceServer interface {
 	GenerateText(context.Context, *GenerateTextRequest) (*GenerateTextResponse, error)
 	// Generate text from a prompt with streaming response
 	GenerateTextStream(*GenerateTextRequest, grpc.ServerStreamingServer[GenerateTextResponse]) error
+	// Chat-completions style request against an OpenAI-compatible API
+	// (or the deterministic mock provider). Used by the multi-agent
+	// reasoning engine (Algorithm 3).
+	Chat(context.Context, *ChatRequest) (*ChatResponse, error)
 	// Get embeddings for text
 	GetEmbeddings(context.Context, *EmbeddingsRequest) (*EmbeddingsResponse, error)
 	// Count tokens in text
@@ -127,6 +146,9 @@ func (UnimplementedLLMInterfaceServiceServer) GenerateText(context.Context, *Gen
 }
 func (UnimplementedLLMInterfaceServiceServer) GenerateTextStream(*GenerateTextRequest, grpc.ServerStreamingServer[GenerateTextResponse]) error {
 	return status.Error(codes.Unimplemented, "method GenerateTextStream not implemented")
+}
+func (UnimplementedLLMInterfaceServiceServer) Chat(context.Context, *ChatRequest) (*ChatResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method Chat not implemented")
 }
 func (UnimplementedLLMInterfaceServiceServer) GetEmbeddings(context.Context, *EmbeddingsRequest) (*EmbeddingsResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetEmbeddings not implemented")
@@ -184,6 +206,24 @@ func _LLMInterfaceService_GenerateTextStream_Handler(srv interface{}, stream grp
 // This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
 type LLMInterfaceService_GenerateTextStreamServer = grpc.ServerStreamingServer[GenerateTextResponse]
 
+func _LLMInterfaceService_Chat_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ChatRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(LLMInterfaceServiceServer).Chat(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: LLMInterfaceService_Chat_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(LLMInterfaceServiceServer).Chat(ctx, req.(*ChatRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _LLMInterfaceService_GetEmbeddings_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(EmbeddingsRequest)
 	if err := dec(in); err != nil {
@@ -230,6 +270,10 @@ var LLMInterfaceService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GenerateText",
 			Handler:    _LLMInterfaceService_GenerateText_Handler,
+		},
+		{
+			MethodName: "Chat",
+			Handler:    _LLMInterfaceService_Chat_Handler,
 		},
 		{
 			MethodName: "GetEmbeddings",

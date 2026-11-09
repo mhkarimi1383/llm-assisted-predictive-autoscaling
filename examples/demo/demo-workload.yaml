@@ -1,0 +1,45 @@
+# Demo workload: a Deployment whose pod template declares CPU and
+# memory requests (required for utilization computation) and a
+# metrics-server-friendly footprint.
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: demo-frontend
+  namespace: default
+  labels:
+    app: demo-frontend
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: demo-frontend
+  template:
+    metadata:
+      labels:
+        app: demo-frontend
+    spec:
+      containers:
+        - name: app
+          image: nginx:alpine
+          resources:
+            requests:
+              cpu: 100m
+              memory: 64Mi
+            limits:
+              cpu: 500m
+              memory: 256Mi
+          ports:
+            - containerPort: 80
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: demo-frontend
+  namespace: default
+spec:
+  selector:
+    app: demo-frontend
+  ports:
+    - port: 80
+      targetPort: 80

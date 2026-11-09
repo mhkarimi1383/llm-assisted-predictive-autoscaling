@@ -1,14 +1,29 @@
 # Algorithms and Pseudocode
 
 This document specifies the proposed autoscaling algorithms described in the
-[project proposal](../PROPOSAL_EN.md). It is the starting point for designing the
-system before further implementation. Each algorithm pairs a Mermaid flowchart
+[project proposal](../PROPOSAL_EN.md). Each algorithm pairs a Mermaid flowchart
 with language-independent pseudocode. The flowcharts show the main steps and
 branches; the pseudocode specifies the detailed checks and outcomes.
 
-The existing services contain simulated behavior and partial message contracts.
-The records, checks, and controller behavior below are design requirements;
-their presence here does not mean they are already implemented.
+## Implementation status (v1)
+
+Version 1 implements a subset of this specification end to end. The
+operator (`operator/`) drives one control cycle per LLMAutoscaler resource
+through the five backing services. The table below records what is real and
+what remains design-only.
+
+| Algorithm | v1 status |
+| --- | --- |
+| 1 — Control cycle | Implemented: exclusive per-workload scaling ownership via a Lease (expired leases are taken over through the recovery protocol), pending-operation observation before any new cycle, one bounded step per cycle, hold-only fallback |
+| 2 — Decision snapshot | Implemented (`GetWorkloadSnapshot`; identity and desired-replica validation, metrics-server and Prometheus metric providers, stub and REST forecast providers, node capacity, namespace quota, and declared pod requests; reads are staged — state, then metrics, then forecast — within the cycle deadline rather than fully parallel) |
+| 3 — Validated model result | Implemented (`multi_agent_reasoning/validation.py`; JSON contract, truncation, direction, bounds, and confidence checks, in-band transport errors, abstentions) |
+| 4 — Parallel analysts | Implemented (forecast, status, policy, history in parallel with a shared deadline; role evidence abstentions; the history analyst votes HOLD only on a detected direction reversal and abstains otherwise) |
+| 5 — Voting and synthesis | Implemented (`multi_agent_reasoning/aggregation.py`; weighted majority, weighted median, min(support, mean confidence), synthesizer with deterministic fallback) |
+| 6 — Deterministic safety | Implemented v1.1 subset (`safety_policy/engine.go`; bounds, cooldown, rate limit, downscale stabilization, percentage limits with strict floor rounding, the `minStepReplicas` minimum-step policy choice, clamping, downscale health check, namespace pods quota, node-capacity fit for scale-up using peak (overlapping old and new pods) demand against node allocatable). Remaining deferred: per-service capacity models and scheduling-constraint detail |
+| 7 — Checked execution | Implemented v1.1 (`scaling_executor/`; Scale subresource with version condition, dry-run, K8s events; action-budget reservation persisted as a pending operation in the resource status before any write, released on definitive failure and reconciled on transport-level uncertainty) |
+| 8 — Fallback selection | Hold-only fallback implemented; the HPA-style metric recommendation is design-only |
+| 9 — Observe and recover | Implemented v1.1: uncertain submissions reconcile against workload state before any further write; the checked target must stay continuously healthy across the verification window before the operation counts as applied; at the observation deadline the operation is marked terminal and one recovery step toward the last verified healthy count is re-evaluated through Algorithm 6 (recovery steps never chain). Multi-instance reconciliation scheduling is deferred |
+| 10 — Evaluation vs HPA | Design-only; scenario harness not yet built |
 
 ## Scope and design choices
 

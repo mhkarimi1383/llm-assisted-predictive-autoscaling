@@ -15,6 +15,67 @@ service SafetyPolicyService {
 
   // Update safety policies (admin only)
   rpc UpdateSafetyPolicy (UpdateSafetyPolicyRequest) returns (UpdateSafetyPolicyResponse);
+
+  // Deterministic evaluation of a scaling recommendation against hard
+  // constraints (Algorithm 6). Independent of the LLM: an approved or
+  // clamped verdict is the only way a scaling write may proceed.
+  rpc EvaluateScaling (EvaluateScalingRequest) returns (ScalingVerdictResponse);
+}
+
+// Verdict of the deterministic scaling safety evaluation
+enum ScalingVerdict {
+  VERDICT_UNSPECIFIED = 0;
+  VERDICT_APPROVED = 1; // Target within all hard constraints
+  VERDICT_CLAMPED = 2; // Target moved to the nearest feasible integer
+  VERDICT_HELD = 3; // No change permitted right now (cooldown, rate, stability)
+  VERDICT_REJECTED = 4; // Recommendation violates a hard constraint
+}
+
+// Hard constraints enforced by the safety engine, sourced from the
+// LLMAutoscaler spec by the operator
+message ScalingConstraints {
+  int32 min_replicas = 1;
+  int32 max_replicas = 2;
+  int32 cooldown_seconds = 3; // Minimum seconds between scaling writes
+  int32 max_scale_up_percent = 4; // 0 = unlimited
+  int32 max_scale_down_percent = 5; // 0 = unlimited
+  int32 min_step_replicas = 8; // 0 = strict floor rounding of percentage limits
+  int32 stabilization_window_seconds = 6; // Downscale stabilization window
+  int32 max_actions_per_hour = 7; // Rate limit; 0 = unlimited
+  bool healthy = 9; // Workload fully healthy (ready covers desired, no pending/terminating)
+  int32 quota_max_pods = 10; // Namespace pods quota; 0 = unknown
+  double pod_request_cpu_cores = 11; // Declared CPU requests per pod
+  double pod_request_memory_bytes = 12; // Declared memory requests per pod
+  double allocatable_cpu_cores = 13; // Eligible node allocatable CPU
+  double allocatable_memory_bytes = 14; // Eligible node allocatable memory
+}
+
+// One recorded scaling action consumed by temporal checks
+message ScalingActionRecord {
+  int64 timestamp = 1; // Unix timestamp in seconds
+  string action = 2; // SCALE_UP, SCALE_DOWN, or HOLD
+  int32 from_replicas = 3;
+  int32 to_replicas = 4;
+  bool dry_run = 5; // Dry-run records do not consume cooldown or rate budget
+}
+
+// Request for deterministic scaling safety evaluation
+message EvaluateScalingRequest {
+  string request_id = 1;
+  string action = 2; // SCALE_UP, SCALE_DOWN, or HOLD
+  int32 current_replicas = 3; // Observed desired replica count
+  int32 proposed_target = 4; // Recommendation target
+  ScalingConstraints constraints = 5;
+  repeated ScalingActionRecord recent_actions = 6; // Scaling history, oldest first
+  int64 now = 7; // Unix timestamp in seconds at evaluation time
+}
+
+// Verdict response bound to the checked target and reasons
+message ScalingVerdictResponse {
+  ScalingVerdict verdict = 1;
+  int32 checked_target = 2; // Final target after clamping
+  repeated string reasons = 3; // Blocking, clamping, or approval reasons
+  repeated string policy_checks = 4; // Per-check audit lines, e.g. "cooldown: pass"
 }
 
 // Request for safety check

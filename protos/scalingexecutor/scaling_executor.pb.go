@@ -87,6 +87,8 @@ type ScalingDecision struct {
 	ResourceName  string                 `protobuf:"bytes,2,opt,name=resource_name,json=resourceName,proto3" json:"resource_name,omitempty"`
 	Namespace     string                 `protobuf:"bytes,3,opt,name=namespace,proto3" json:"namespace,omitempty"`
 	ReplicaCount  int32                  `protobuf:"varint,4,opt,name=replica_count,json=replicaCount,proto3" json:"replica_count,omitempty"` // Desired replica count
+	DryRun        bool                   `protobuf:"varint,5,opt,name=dry_run,json=dryRun,proto3" json:"dry_run,omitempty"`                   // Record the checked step without submitting it (Algorithm 7)
+	RequestId     string                 `protobuf:"bytes,6,opt,name=request_id,json=requestId,proto3" json:"request_id,omitempty"`           // Decision cycle identifier for audit and idempotency
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -149,12 +151,29 @@ func (x *ScalingDecision) GetReplicaCount() int32 {
 	return 0
 }
 
+func (x *ScalingDecision) GetDryRun() bool {
+	if x != nil {
+		return x.DryRun
+	}
+	return false
+}
+
+func (x *ScalingDecision) GetRequestId() string {
+	if x != nil {
+		return x.RequestId
+	}
+	return ""
+}
+
 // Response for executing a scaling decision
 type ScalingResult struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Success       bool                   `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`
 	Message       string                 `protobuf:"bytes,2,opt,name=message,proto3" json:"message,omitempty"`
-	Timestamp     int64                  `protobuf:"varint,3,opt,name=timestamp,proto3" json:"timestamp,omitempty"` // Unix timestamp when the action was completed
+	Timestamp     int64                  `protobuf:"varint,3,opt,name=timestamp,proto3" json:"timestamp,omitempty"`                           // Unix timestamp when the action was completed
+	FromReplicas  int32                  `protobuf:"varint,4,opt,name=from_replicas,json=fromReplicas,proto3" json:"from_replicas,omitempty"` // Replica count observed before the write
+	ToReplicas    int32                  `protobuf:"varint,5,opt,name=to_replicas,json=toReplicas,proto3" json:"to_replicas,omitempty"`       // Replica count submitted
+	DryRun        bool                   `protobuf:"varint,6,opt,name=dry_run,json=dryRun,proto3" json:"dry_run,omitempty"`                   // True when the step was recorded without submission
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -208,6 +227,27 @@ func (x *ScalingResult) GetTimestamp() int64 {
 		return x.Timestamp
 	}
 	return 0
+}
+
+func (x *ScalingResult) GetFromReplicas() int32 {
+	if x != nil {
+		return x.FromReplicas
+	}
+	return 0
+}
+
+func (x *ScalingResult) GetToReplicas() int32 {
+	if x != nil {
+		return x.ToReplicas
+	}
+	return 0
+}
+
+func (x *ScalingResult) GetDryRun() bool {
+	if x != nil {
+		return x.DryRun
+	}
+	return false
 }
 
 // Request for getting scaling status
@@ -697,16 +737,23 @@ var File_scaling_executor_proto protoreflect.FileDescriptor
 
 const file_scaling_executor_proto_rawDesc = "" +
 	"\n" +
-	"\x16scaling_executor.proto\x12\x0fscalingexecutor\"\x9e\x01\n" +
+	"\x16scaling_executor.proto\x12\x0fscalingexecutor\"\xd6\x01\n" +
 	"\x0fScalingDecision\x12#\n" +
 	"\rresource_type\x18\x01 \x01(\tR\fresourceType\x12#\n" +
 	"\rresource_name\x18\x02 \x01(\tR\fresourceName\x12\x1c\n" +
 	"\tnamespace\x18\x03 \x01(\tR\tnamespace\x12#\n" +
-	"\rreplica_count\x18\x04 \x01(\x05R\freplicaCount\"a\n" +
+	"\rreplica_count\x18\x04 \x01(\x05R\freplicaCount\x12\x17\n" +
+	"\adry_run\x18\x05 \x01(\bR\x06dryRun\x12\x1d\n" +
+	"\n" +
+	"request_id\x18\x06 \x01(\tR\trequestId\"\xc0\x01\n" +
 	"\rScalingResult\x12\x18\n" +
 	"\asuccess\x18\x01 \x01(\bR\asuccess\x12\x18\n" +
 	"\amessage\x18\x02 \x01(\tR\amessage\x12\x1c\n" +
-	"\ttimestamp\x18\x03 \x01(\x03R\ttimestamp\"~\n" +
+	"\ttimestamp\x18\x03 \x01(\x03R\ttimestamp\x12#\n" +
+	"\rfrom_replicas\x18\x04 \x01(\x05R\ffromReplicas\x12\x1f\n" +
+	"\vto_replicas\x18\x05 \x01(\x05R\n" +
+	"toReplicas\x12\x17\n" +
+	"\adry_run\x18\x06 \x01(\bR\x06dryRun\"~\n" +
 	"\x14ScalingStatusRequest\x12#\n" +
 	"\rresource_type\x18\x01 \x01(\tR\fresourceType\x12#\n" +
 	"\rresource_name\x18\x02 \x01(\tR\fresourceName\x12\x1c\n" +

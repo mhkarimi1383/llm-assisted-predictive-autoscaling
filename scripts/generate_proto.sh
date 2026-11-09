@@ -16,6 +16,14 @@ if ! command -v protoc &> /dev/null; then
     exit 1
 fi
 
+# Prefer the project uv venv python for grpcio-tools; fall back to PATH.
+# (System or nix-provided grpcio-tools may target a different interpreter.)
+if [[ -x "$SCRIPT_DIR/../.venv/bin/python" ]] && "$SCRIPT_DIR/../.venv/bin/python" -c "import grpc_tools" &> /dev/null; then
+    PYTHON="$SCRIPT_DIR/../.venv/bin/python"
+else
+    PYTHON="python"
+fi
+
 # Check for Go protobuf plugin
 if ! command -v protoc-gen-go &> /dev/null; then
     echo "Warning: protoc-gen-go not found. Go code generation will be skipped."
@@ -66,7 +74,7 @@ for proto_file in "$PROTOS_DIR"/*.proto; do
 
     # Generate Python gRPC code using grpcio-tools (via python module)
     echo "  Generating Python gRPC code..."
-    if ! python -m grpc_tools.protoc --python_out="$PROTOS_DIR" --grpc_python_out="$PROTOS_DIR" --proto_path="$PROTOS_DIR" "$proto_file"; then
+    if ! "$PYTHON" -m grpc_tools.protoc --python_out="$PROTOS_DIR" --grpc_python_out="$PROTOS_DIR" --proto_path="$PROTOS_DIR" "$proto_file"; then
         echo "Warning: Failed to generate Python gRPC code for $proto_filename."
         echo "         You may need to install grpcio-tools: pip install grpcio-tools"
     fi

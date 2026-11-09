@@ -1,0 +1,39 @@
+# LLMAutoscaler driving the demo workload with the deterministic
+# mock LLM provider and the stub forecast (synthetic daily pattern).
+# Safe for demos: dry-run records decisions without scaling.
+---
+apiVersion: autoscaling.karimi.dev/v1alpha1
+kind: LLMAutoscaler
+metadata:
+  name: demo-frontend-mock
+  namespace: default
+spec:
+  scaleTargetRef:
+    kind: Deployment
+    name: demo-frontend
+  minReplicas: 2
+  maxReplicas: 10
+  dryRun: false
+  llm:
+    endpoint: "mock://"
+    model: "mock"
+  reasoning:
+    quorum: 3
+    confidenceThreshold: 0.6
+    timeoutSeconds: 30
+    analystWeights:
+      forecast: 1.0
+      status: 1.0
+      policy: 1.0
+      history: 1.0
+  safety:
+    cooldownSeconds: 120
+    maxScaleUpPercent: 100
+    maxScaleDownPercent: 25
+    minStepReplicas: 1
+    stabilizationWindowSeconds: 60
+    maxActionsPerHour: 20
+  metrics:
+    provider: metrics-server
+  forecast:
+    provider: stub

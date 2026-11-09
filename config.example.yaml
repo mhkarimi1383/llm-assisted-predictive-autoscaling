@@ -108,7 +108,7 @@ scaling_executor:
   # Kubernetes integration settings
   kubernetes:
     # CRD group for LLMAutoscaler
-    crd_group: "autoscaling.ai"
+    crd_group: "autoscaling.karimi.dev"
     # CRD version
     crd_version: "v1"
     # CRD kind (plural)

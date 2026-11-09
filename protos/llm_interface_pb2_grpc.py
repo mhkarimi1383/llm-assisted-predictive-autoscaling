@@ -45,6 +45,11 @@ class LLMInterfaceServiceStub:
                 request_serializer=llm__interface__pb2.GenerateTextRequest.SerializeToString,
                 response_deserializer=llm__interface__pb2.GenerateTextResponse.FromString,
                 _registered_method=True)
+        self.Chat = channel.unary_unary(
+                '/llminterface.LLMInterfaceService/Chat',
+                request_serializer=llm__interface__pb2.ChatRequest.SerializeToString,
+                response_deserializer=llm__interface__pb2.ChatResponse.FromString,
+                _registered_method=True)
         self.GetEmbeddings = channel.unary_unary(
                 '/llminterface.LLMInterfaceService/GetEmbeddings',
                 request_serializer=llm__interface__pb2.EmbeddingsRequest.SerializeToString,
@@ -70,6 +75,15 @@ class LLMInterfaceServiceServicer:
 
     def GenerateTextStream(self, request, context):
         """Generate text from a prompt with streaming response
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def Chat(self, request, context):
+        """Chat-completions style request against an OpenAI-compatible API
+        (or the deterministic mock provider). Used by the multi-agent
+        reasoning engine (Algorithm 3).
         """
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
@@ -101,6 +115,11 @@ def add_LLMInterfaceServiceServicer_to_server(servicer, server):
                     servicer.GenerateTextStream,
                     request_deserializer=llm__interface__pb2.GenerateTextRequest.FromString,
                     response_serializer=llm__interface__pb2.GenerateTextResponse.SerializeToString,
+            ),
+            'Chat': grpc.unary_unary_rpc_method_handler(
+                    servicer.Chat,
+                    request_deserializer=llm__interface__pb2.ChatRequest.FromString,
+                    response_serializer=llm__interface__pb2.ChatResponse.SerializeToString,
             ),
             'GetEmbeddings': grpc.unary_unary_rpc_method_handler(
                     servicer.GetEmbeddings,
@@ -168,6 +187,33 @@ class LLMInterfaceService:
             '/llminterface.LLMInterfaceService/GenerateTextStream',
             llm__interface__pb2.GenerateTextRequest.SerializeToString,
             llm__interface__pb2.GenerateTextResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def Chat(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/llminterface.LLMInterfaceService/Chat',
+            llm__interface__pb2.ChatRequest.SerializeToString,
+            llm__interface__pb2.ChatResponse.FromString,
             options,
             channel_credentials,
             insecure,

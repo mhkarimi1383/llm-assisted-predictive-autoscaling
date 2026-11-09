@@ -21,6 +21,245 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+// One chat message in the conversation
+type ChatMessage struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Role          string                 `protobuf:"bytes,1,opt,name=role,proto3" json:"role,omitempty"` // "system", "user", or "assistant"
+	Content       string                 `protobuf:"bytes,2,opt,name=content,proto3" json:"content,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ChatMessage) Reset() {
+	*x = ChatMessage{}
+	mi := &file_llm_interface_proto_msgTypes[0]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ChatMessage) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ChatMessage) ProtoMessage() {}
+
+func (x *ChatMessage) ProtoReflect() protoreflect.Message {
+	mi := &file_llm_interface_proto_msgTypes[0]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ChatMessage.ProtoReflect.Descriptor instead.
+func (*ChatMessage) Descriptor() ([]byte, []int) {
+	return file_llm_interface_proto_rawDescGZIP(), []int{0}
+}
+
+func (x *ChatMessage) GetRole() string {
+	if x != nil {
+		return x.Role
+	}
+	return ""
+}
+
+func (x *ChatMessage) GetContent() string {
+	if x != nil {
+		return x.Content
+	}
+	return ""
+}
+
+// Chat-completions request; fields map to the OpenAI-compatible API
+type ChatRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Messages      []*ChatMessage         `protobuf:"bytes,1,rep,name=messages,proto3" json:"messages,omitempty"`
+	Model         string                 `protobuf:"bytes,2,opt,name=model,proto3" json:"model,omitempty"` // empty = service default model
+	Temperature   float64                `protobuf:"fixed64,3,opt,name=temperature,proto3" json:"temperature,omitempty"`
+	MaxTokens     int32                  `protobuf:"varint,4,opt,name=max_tokens,json=maxTokens,proto3" json:"max_tokens,omitempty"` // 0 = API default
+	JsonMode      bool                   `protobuf:"varint,5,opt,name=json_mode,json=jsonMode,proto3" json:"json_mode,omitempty"`    // request strict JSON output (response_format)
+	RequestId     string                 `protobuf:"bytes,6,opt,name=request_id,json=requestId,proto3" json:"request_id,omitempty"`  // caller-assigned correlation identifier
+	Endpoint      string                 `protobuf:"bytes,7,opt,name=endpoint,proto3" json:"endpoint,omitempty"`                     // optional provider base URL override; empty = service default
+	ApiKey        string                 `protobuf:"bytes,8,opt,name=api_key,json=apiKey,proto3" json:"api_key,omitempty"`           // optional bearer token override; empty = service default
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ChatRequest) Reset() {
+	*x = ChatRequest{}
+	mi := &file_llm_interface_proto_msgTypes[1]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ChatRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ChatRequest) ProtoMessage() {}
+
+func (x *ChatRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_llm_interface_proto_msgTypes[1]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ChatRequest.ProtoReflect.Descriptor instead.
+func (*ChatRequest) Descriptor() ([]byte, []int) {
+	return file_llm_interface_proto_rawDescGZIP(), []int{1}
+}
+
+func (x *ChatRequest) GetMessages() []*ChatMessage {
+	if x != nil {
+		return x.Messages
+	}
+	return nil
+}
+
+func (x *ChatRequest) GetModel() string {
+	if x != nil {
+		return x.Model
+	}
+	return ""
+}
+
+func (x *ChatRequest) GetTemperature() float64 {
+	if x != nil {
+		return x.Temperature
+	}
+	return 0
+}
+
+func (x *ChatRequest) GetMaxTokens() int32 {
+	if x != nil {
+		return x.MaxTokens
+	}
+	return 0
+}
+
+func (x *ChatRequest) GetJsonMode() bool {
+	if x != nil {
+		return x.JsonMode
+	}
+	return false
+}
+
+func (x *ChatRequest) GetRequestId() string {
+	if x != nil {
+		return x.RequestId
+	}
+	return ""
+}
+
+func (x *ChatRequest) GetEndpoint() string {
+	if x != nil {
+		return x.Endpoint
+	}
+	return ""
+}
+
+func (x *ChatRequest) GetApiKey() string {
+	if x != nil {
+		return x.ApiKey
+	}
+	return ""
+}
+
+// Chat-completions response
+type ChatResponse struct {
+	state            protoimpl.MessageState `protogen:"open.v1"`
+	Content          string                 `protobuf:"bytes,1,opt,name=content,proto3" json:"content,omitempty"` // assistant message content
+	PromptTokens     int32                  `protobuf:"varint,2,opt,name=prompt_tokens,json=promptTokens,proto3" json:"prompt_tokens,omitempty"`
+	CompletionTokens int32                  `protobuf:"varint,3,opt,name=completion_tokens,json=completionTokens,proto3" json:"completion_tokens,omitempty"`
+	FinishReason     string                 `protobuf:"bytes,4,opt,name=finish_reason,json=finishReason,proto3" json:"finish_reason,omitempty"` // "stop", "length", ...
+	Model            string                 `protobuf:"bytes,5,opt,name=model,proto3" json:"model,omitempty"`
+	Error            string                 `protobuf:"bytes,6,opt,name=error,proto3" json:"error,omitempty"` // empty on success; reason on failure
+	unknownFields    protoimpl.UnknownFields
+	sizeCache        protoimpl.SizeCache
+}
+
+func (x *ChatResponse) Reset() {
+	*x = ChatResponse{}
+	mi := &file_llm_interface_proto_msgTypes[2]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ChatResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ChatResponse) ProtoMessage() {}
+
+func (x *ChatResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_llm_interface_proto_msgTypes[2]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ChatResponse.ProtoReflect.Descriptor instead.
+func (*ChatResponse) Descriptor() ([]byte, []int) {
+	return file_llm_interface_proto_rawDescGZIP(), []int{2}
+}
+
+func (x *ChatResponse) GetContent() string {
+	if x != nil {
+		return x.Content
+	}
+	return ""
+}
+
+func (x *ChatResponse) GetPromptTokens() int32 {
+	if x != nil {
+		return x.PromptTokens
+	}
+	return 0
+}
+
+func (x *ChatResponse) GetCompletionTokens() int32 {
+	if x != nil {
+		return x.CompletionTokens
+	}
+	return 0
+}
+
+func (x *ChatResponse) GetFinishReason() string {
+	if x != nil {
+		return x.FinishReason
+	}
+	return ""
+}
+
+func (x *ChatResponse) GetModel() string {
+	if x != nil {
+		return x.Model
+	}
+	return ""
+}
+
+func (x *ChatResponse) GetError() string {
+	if x != nil {
+		return x.Error
+	}
+	return ""
+}
+
 // Request for text generation
 type GenerateTextRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
@@ -36,7 +275,7 @@ type GenerateTextRequest struct {
 
 func (x *GenerateTextRequest) Reset() {
 	*x = GenerateTextRequest{}
-	mi := &file_llm_interface_proto_msgTypes[0]
+	mi := &file_llm_interface_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -48,7 +287,7 @@ func (x *GenerateTextRequest) String() string {
 func (*GenerateTextRequest) ProtoMessage() {}
 
 func (x *GenerateTextRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_llm_interface_proto_msgTypes[0]
+	mi := &file_llm_interface_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -61,7 +300,7 @@ func (x *GenerateTextRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GenerateTextRequest.ProtoReflect.Descriptor instead.
 func (*GenerateTextRequest) Descriptor() ([]byte, []int) {
-	return file_llm_interface_proto_rawDescGZIP(), []int{0}
+	return file_llm_interface_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *GenerateTextRequest) GetPrompt() string {
@@ -118,7 +357,7 @@ type GenerateTextResponse struct {
 
 func (x *GenerateTextResponse) Reset() {
 	*x = GenerateTextResponse{}
-	mi := &file_llm_interface_proto_msgTypes[1]
+	mi := &file_llm_interface_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -130,7 +369,7 @@ func (x *GenerateTextResponse) String() string {
 func (*GenerateTextResponse) ProtoMessage() {}
 
 func (x *GenerateTextResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_llm_interface_proto_msgTypes[1]
+	mi := &file_llm_interface_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -143,7 +382,7 @@ func (x *GenerateTextResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GenerateTextResponse.ProtoReflect.Descriptor instead.
 func (*GenerateTextResponse) Descriptor() ([]byte, []int) {
-	return file_llm_interface_proto_rawDescGZIP(), []int{1}
+	return file_llm_interface_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *GenerateTextResponse) GetText() string {
@@ -178,7 +417,7 @@ type EmbeddingsRequest struct {
 
 func (x *EmbeddingsRequest) Reset() {
 	*x = EmbeddingsRequest{}
-	mi := &file_llm_interface_proto_msgTypes[2]
+	mi := &file_llm_interface_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -190,7 +429,7 @@ func (x *EmbeddingsRequest) String() string {
 func (*EmbeddingsRequest) ProtoMessage() {}
 
 func (x *EmbeddingsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_llm_interface_proto_msgTypes[2]
+	mi := &file_llm_interface_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -203,7 +442,7 @@ func (x *EmbeddingsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use EmbeddingsRequest.ProtoReflect.Descriptor instead.
 func (*EmbeddingsRequest) Descriptor() ([]byte, []int) {
-	return file_llm_interface_proto_rawDescGZIP(), []int{2}
+	return file_llm_interface_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *EmbeddingsRequest) GetText() string {
@@ -230,7 +469,7 @@ type EmbeddingsResponse struct {
 
 func (x *EmbeddingsResponse) Reset() {
 	*x = EmbeddingsResponse{}
-	mi := &file_llm_interface_proto_msgTypes[3]
+	mi := &file_llm_interface_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -242,7 +481,7 @@ func (x *EmbeddingsResponse) String() string {
 func (*EmbeddingsResponse) ProtoMessage() {}
 
 func (x *EmbeddingsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_llm_interface_proto_msgTypes[3]
+	mi := &file_llm_interface_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -255,7 +494,7 @@ func (x *EmbeddingsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use EmbeddingsResponse.ProtoReflect.Descriptor instead.
 func (*EmbeddingsResponse) Descriptor() ([]byte, []int) {
-	return file_llm_interface_proto_rawDescGZIP(), []int{3}
+	return file_llm_interface_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *EmbeddingsResponse) GetEmbedding() []float32 {
@@ -276,7 +515,7 @@ type TokenCountRequest struct {
 
 func (x *TokenCountRequest) Reset() {
 	*x = TokenCountRequest{}
-	mi := &file_llm_interface_proto_msgTypes[4]
+	mi := &file_llm_interface_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -288,7 +527,7 @@ func (x *TokenCountRequest) String() string {
 func (*TokenCountRequest) ProtoMessage() {}
 
 func (x *TokenCountRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_llm_interface_proto_msgTypes[4]
+	mi := &file_llm_interface_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -301,7 +540,7 @@ func (x *TokenCountRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TokenCountRequest.ProtoReflect.Descriptor instead.
 func (*TokenCountRequest) Descriptor() ([]byte, []int) {
-	return file_llm_interface_proto_rawDescGZIP(), []int{4}
+	return file_llm_interface_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *TokenCountRequest) GetText() string {
@@ -329,7 +568,7 @@ type TokenCountResponse struct {
 
 func (x *TokenCountResponse) Reset() {
 	*x = TokenCountResponse{}
-	mi := &file_llm_interface_proto_msgTypes[5]
+	mi := &file_llm_interface_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -341,7 +580,7 @@ func (x *TokenCountResponse) String() string {
 func (*TokenCountResponse) ProtoMessage() {}
 
 func (x *TokenCountResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_llm_interface_proto_msgTypes[5]
+	mi := &file_llm_interface_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -354,7 +593,7 @@ func (x *TokenCountResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TokenCountResponse.ProtoReflect.Descriptor instead.
 func (*TokenCountResponse) Descriptor() ([]byte, []int) {
-	return file_llm_interface_proto_rawDescGZIP(), []int{5}
+	return file_llm_interface_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *TokenCountResponse) GetTokenCount() int32 {
@@ -375,7 +614,28 @@ var File_llm_interface_proto protoreflect.FileDescriptor
 
 const file_llm_interface_proto_rawDesc = "" +
 	"\n" +
-	"\x13llm_interface.proto\x12\fllminterface\"\xa9\x01\n" +
+	"\x13llm_interface.proto\x12\fllminterface\";\n" +
+	"\vChatMessage\x12\x12\n" +
+	"\x04role\x18\x01 \x01(\tR\x04role\x12\x18\n" +
+	"\acontent\x18\x02 \x01(\tR\acontent\"\x8c\x02\n" +
+	"\vChatRequest\x125\n" +
+	"\bmessages\x18\x01 \x03(\v2\x19.llminterface.ChatMessageR\bmessages\x12\x14\n" +
+	"\x05model\x18\x02 \x01(\tR\x05model\x12 \n" +
+	"\vtemperature\x18\x03 \x01(\x01R\vtemperature\x12\x1d\n" +
+	"\n" +
+	"max_tokens\x18\x04 \x01(\x05R\tmaxTokens\x12\x1b\n" +
+	"\tjson_mode\x18\x05 \x01(\bR\bjsonMode\x12\x1d\n" +
+	"\n" +
+	"request_id\x18\x06 \x01(\tR\trequestId\x12\x1a\n" +
+	"\bendpoint\x18\a \x01(\tR\bendpoint\x12\x17\n" +
+	"\aapi_key\x18\b \x01(\tR\x06apiKey\"\xcb\x01\n" +
+	"\fChatResponse\x12\x18\n" +
+	"\acontent\x18\x01 \x01(\tR\acontent\x12#\n" +
+	"\rprompt_tokens\x18\x02 \x01(\x05R\fpromptTokens\x12+\n" +
+	"\x11completion_tokens\x18\x03 \x01(\x05R\x10completionTokens\x12#\n" +
+	"\rfinish_reason\x18\x04 \x01(\tR\ffinishReason\x12\x14\n" +
+	"\x05model\x18\x05 \x01(\tR\x05model\x12\x14\n" +
+	"\x05error\x18\x06 \x01(\tR\x05error\"\xa9\x01\n" +
 	"\x13GenerateTextRequest\x12\x16\n" +
 	"\x06prompt\x18\x01 \x01(\tR\x06prompt\x12\x1d\n" +
 	"\n" +
@@ -400,10 +660,11 @@ const file_llm_interface_proto_rawDesc = "" +
 	"\x12TokenCountResponse\x12\x1f\n" +
 	"\vtoken_count\x18\x01 \x01(\x05R\n" +
 	"tokenCount\x12\x16\n" +
-	"\x06tokens\x18\x02 \x03(\tR\x06tokens2\xf1\x02\n" +
+	"\x06tokens\x18\x02 \x03(\tR\x06tokens2\xb0\x03\n" +
 	"\x13LLMInterfaceService\x12U\n" +
 	"\fGenerateText\x12!.llminterface.GenerateTextRequest\x1a\".llminterface.GenerateTextResponse\x12]\n" +
-	"\x12GenerateTextStream\x12!.llminterface.GenerateTextRequest\x1a\".llminterface.GenerateTextResponse0\x01\x12R\n" +
+	"\x12GenerateTextStream\x12!.llminterface.GenerateTextRequest\x1a\".llminterface.GenerateTextResponse0\x01\x12=\n" +
+	"\x04Chat\x12\x19.llminterface.ChatRequest\x1a\x1a.llminterface.ChatResponse\x12R\n" +
 	"\rGetEmbeddings\x12\x1f.llminterface.EmbeddingsRequest\x1a .llminterface.EmbeddingsResponse\x12P\n" +
 	"\vCountTokens\x12\x1f.llminterface.TokenCountRequest\x1a .llminterface.TokenCountResponseb\x06proto3"
 
@@ -419,29 +680,35 @@ func file_llm_interface_proto_rawDescGZIP() []byte {
 	return file_llm_interface_proto_rawDescData
 }
 
-var file_llm_interface_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
+var file_llm_interface_proto_msgTypes = make([]protoimpl.MessageInfo, 9)
 var file_llm_interface_proto_goTypes = []any{
-	(*GenerateTextRequest)(nil),  // 0: llminterface.GenerateTextRequest
-	(*GenerateTextResponse)(nil), // 1: llminterface.GenerateTextResponse
-	(*EmbeddingsRequest)(nil),    // 2: llminterface.EmbeddingsRequest
-	(*EmbeddingsResponse)(nil),   // 3: llminterface.EmbeddingsResponse
-	(*TokenCountRequest)(nil),    // 4: llminterface.TokenCountRequest
-	(*TokenCountResponse)(nil),   // 5: llminterface.TokenCountResponse
+	(*ChatMessage)(nil),          // 0: llminterface.ChatMessage
+	(*ChatRequest)(nil),          // 1: llminterface.ChatRequest
+	(*ChatResponse)(nil),         // 2: llminterface.ChatResponse
+	(*GenerateTextRequest)(nil),  // 3: llminterface.GenerateTextRequest
+	(*GenerateTextResponse)(nil), // 4: llminterface.GenerateTextResponse
+	(*EmbeddingsRequest)(nil),    // 5: llminterface.EmbeddingsRequest
+	(*EmbeddingsResponse)(nil),   // 6: llminterface.EmbeddingsResponse
+	(*TokenCountRequest)(nil),    // 7: llminterface.TokenCountRequest
+	(*TokenCountResponse)(nil),   // 8: llminterface.TokenCountResponse
 }
 var file_llm_interface_proto_depIdxs = []int32{
-	0, // 0: llminterface.LLMInterfaceService.GenerateText:input_type -> llminterface.GenerateTextRequest
-	0, // 1: llminterface.LLMInterfaceService.GenerateTextStream:input_type -> llminterface.GenerateTextRequest
-	2, // 2: llminterface.LLMInterfaceService.GetEmbeddings:input_type -> llminterface.EmbeddingsRequest
-	4, // 3: llminterface.LLMInterfaceService.CountTokens:input_type -> llminterface.TokenCountRequest
-	1, // 4: llminterface.LLMInterfaceService.GenerateText:output_type -> llminterface.GenerateTextResponse
-	1, // 5: llminterface.LLMInterfaceService.GenerateTextStream:output_type -> llminterface.GenerateTextResponse
-	3, // 6: llminterface.LLMInterfaceService.GetEmbeddings:output_type -> llminterface.EmbeddingsResponse
-	5, // 7: llminterface.LLMInterfaceService.CountTokens:output_type -> llminterface.TokenCountResponse
-	4, // [4:8] is the sub-list for method output_type
-	0, // [0:4] is the sub-list for method input_type
-	0, // [0:0] is the sub-list for extension type_name
-	0, // [0:0] is the sub-list for extension extendee
-	0, // [0:0] is the sub-list for field type_name
+	0, // 0: llminterface.ChatRequest.messages:type_name -> llminterface.ChatMessage
+	3, // 1: llminterface.LLMInterfaceService.GenerateText:input_type -> llminterface.GenerateTextRequest
+	3, // 2: llminterface.LLMInterfaceService.GenerateTextStream:input_type -> llminterface.GenerateTextRequest
+	1, // 3: llminterface.LLMInterfaceService.Chat:input_type -> llminterface.ChatRequest
+	5, // 4: llminterface.LLMInterfaceService.GetEmbeddings:input_type -> llminterface.EmbeddingsRequest
+	7, // 5: llminterface.LLMInterfaceService.CountTokens:input_type -> llminterface.TokenCountRequest
+	4, // 6: llminterface.LLMInterfaceService.GenerateText:output_type -> llminterface.GenerateTextResponse
+	4, // 7: llminterface.LLMInterfaceService.GenerateTextStream:output_type -> llminterface.GenerateTextResponse
+	2, // 8: llminterface.LLMInterfaceService.Chat:output_type -> llminterface.ChatResponse
+	6, // 9: llminterface.LLMInterfaceService.GetEmbeddings:output_type -> llminterface.EmbeddingsResponse
+	8, // 10: llminterface.LLMInterfaceService.CountTokens:output_type -> llminterface.TokenCountResponse
+	6, // [6:11] is the sub-list for method output_type
+	1, // [1:6] is the sub-list for method input_type
+	1, // [1:1] is the sub-list for extension type_name
+	1, // [1:1] is the sub-list for extension extendee
+	0, // [0:1] is the sub-list for field type_name
 }
 
 func init() { file_llm_interface_proto_init() }
@@ -455,7 +722,7 @@ func file_llm_interface_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_llm_interface_proto_rawDesc), len(file_llm_interface_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   6,
+			NumMessages:   9,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

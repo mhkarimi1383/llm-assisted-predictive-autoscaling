@@ -55,6 +55,11 @@ class SafetyPolicyServiceStub:
                 request_serializer=safety__policy__pb2.UpdateSafetyPolicyRequest.SerializeToString,
                 response_deserializer=safety__policy__pb2.UpdateSafetyPolicyResponse.FromString,
                 _registered_method=True)
+        self.EvaluateScaling = channel.unary_unary(
+                '/safetypolicy.SafetyPolicyService/EvaluateScaling',
+                request_serializer=safety__policy__pb2.EvaluateScalingRequest.SerializeToString,
+                response_deserializer=safety__policy__pb2.ScalingVerdictResponse.FromString,
+                _registered_method=True)
 
 
 class SafetyPolicyServiceServicer:
@@ -89,6 +94,15 @@ class SafetyPolicyServiceServicer:
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
+    def EvaluateScaling(self, request, context):
+        """Deterministic evaluation of a scaling recommendation against hard
+        constraints (Algorithm 6). Independent of the LLM: an approved or
+        clamped verdict is the only way a scaling write may proceed.
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
 
 def add_SafetyPolicyServiceServicer_to_server(servicer, server):
     rpc_method_handlers = {
@@ -111,6 +125,11 @@ def add_SafetyPolicyServiceServicer_to_server(servicer, server):
                     servicer.UpdateSafetyPolicy,
                     request_deserializer=safety__policy__pb2.UpdateSafetyPolicyRequest.FromString,
                     response_serializer=safety__policy__pb2.UpdateSafetyPolicyResponse.SerializeToString,
+            ),
+            'EvaluateScaling': grpc.unary_unary_rpc_method_handler(
+                    servicer.EvaluateScaling,
+                    request_deserializer=safety__policy__pb2.EvaluateScalingRequest.FromString,
+                    response_serializer=safety__policy__pb2.ScalingVerdictResponse.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -222,6 +241,33 @@ class SafetyPolicyService:
             '/safetypolicy.SafetyPolicyService/UpdateSafetyPolicy',
             safety__policy__pb2.UpdateSafetyPolicyRequest.SerializeToString,
             safety__policy__pb2.UpdateSafetyPolicyResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def EvaluateScaling(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/safetypolicy.SafetyPolicyService/EvaluateScaling',
+            safety__policy__pb2.EvaluateScalingRequest.SerializeToString,
+            safety__policy__pb2.ScalingVerdictResponse.FromString,
             options,
             channel_credentials,
             insecure,

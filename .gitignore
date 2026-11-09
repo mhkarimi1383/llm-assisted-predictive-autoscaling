@@ -152,10 +152,8 @@ dmypy_cache
 *.out
 
 # Kubernetes / Operator SDK
-# Generated manifests and binaries
+# Generated binaries
 /bin/
-/deploy/
-/manifests/
 
 # Helm charts
 charts/
@@ -226,9 +224,6 @@ pids
 
 # Docker
 .dockerignore
-Dockerfile*
-docker-compose*.yml
-docker-compose*.override.yml
 
 # Terraform
 .terraform/
@@ -250,3 +245,20 @@ poetry.lock
 
 .lsp/
 .clj-kondo/
+# Local GOPATH used by the nix dev shell (controller-gen etc.)
+/go/
+
+# ZCode workspace metadata
+.zcode/
+
+# Test VM artifacts
+vm/result
+vm/vm.log
+vm/vm.pid
+
+# Build artifacts
+/llm-autoscaler
+/result
+
+# Test VM disk image
+*.qcow2

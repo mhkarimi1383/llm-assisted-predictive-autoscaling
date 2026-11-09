@@ -1,6 +1,6 @@
 # Project Documentation
 
-Start with [Algorithms and Pseudocode](ALGORITHMS.md), which describes the proposed
+Start with [Algorithms and Pseudocode](en/ALGORITHMS.md), which describes the proposed
 decision process for the LLM-Based Intelligent Autoscaling System before further
 implementation.
 

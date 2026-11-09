@@ -22,6 +22,307 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+// One analyst outcome: an action with a target, an abstention, or a
+// validation failure (Algorithm 4)
+type AnalystResult struct {
+	state            protoimpl.MessageState `protogen:"open.v1"`
+	Role             string                 `protobuf:"bytes,1,opt,name=role,proto3" json:"role,omitempty"`                                                 // forecast, status, policy, or history
+	Action           string                 `protobuf:"bytes,2,opt,name=action,proto3" json:"action,omitempty"`                                             // SCALE_UP, SCALE_DOWN, or HOLD; empty on abstention/failure
+	Target           int32                  `protobuf:"varint,3,opt,name=target,proto3" json:"target,omitempty"`                                            // Proposed replica count; 0 on abstention/failure
+	Confidence       float64                `protobuf:"fixed64,4,opt,name=confidence,proto3" json:"confidence,omitempty"`                                   // Self-reported confidence in [0,1]
+	Rationale        string                 `protobuf:"bytes,5,opt,name=rationale,proto3" json:"rationale,omitempty"`                                       // Concise justification citing snapshot evidence
+	AbstentionReason string                 `protobuf:"bytes,6,opt,name=abstention_reason,json=abstentionReason,proto3" json:"abstention_reason,omitempty"` // Non-empty when the analyst abstained
+	Error            string                 `protobuf:"bytes,7,opt,name=error,proto3" json:"error,omitempty"`                                               // Non-empty when the result failed validation
+	unknownFields    protoimpl.UnknownFields
+	sizeCache        protoimpl.SizeCache
+}
+
+func (x *AnalystResult) Reset() {
+	*x = AnalystResult{}
+	mi := &file_multi_agent_reasoning_proto_msgTypes[0]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *AnalystResult) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*AnalystResult) ProtoMessage() {}
+
+func (x *AnalystResult) ProtoReflect() protoreflect.Message {
+	mi := &file_multi_agent_reasoning_proto_msgTypes[0]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use AnalystResult.ProtoReflect.Descriptor instead.
+func (*AnalystResult) Descriptor() ([]byte, []int) {
+	return file_multi_agent_reasoning_proto_rawDescGZIP(), []int{0}
+}
+
+func (x *AnalystResult) GetRole() string {
+	if x != nil {
+		return x.Role
+	}
+	return ""
+}
+
+func (x *AnalystResult) GetAction() string {
+	if x != nil {
+		return x.Action
+	}
+	return ""
+}
+
+func (x *AnalystResult) GetTarget() int32 {
+	if x != nil {
+		return x.Target
+	}
+	return 0
+}
+
+func (x *AnalystResult) GetConfidence() float64 {
+	if x != nil {
+		return x.Confidence
+	}
+	return 0
+}
+
+func (x *AnalystResult) GetRationale() string {
+	if x != nil {
+		return x.Rationale
+	}
+	return ""
+}
+
+func (x *AnalystResult) GetAbstentionReason() string {
+	if x != nil {
+		return x.AbstentionReason
+	}
+	return ""
+}
+
+func (x *AnalystResult) GetError() string {
+	if x != nil {
+		return x.Error
+	}
+	return ""
+}
+
+// Aggregated recommendation with voting summary (Algorithm 5)
+type ScalingRecommendation struct {
+	state                  protoimpl.MessageState `protogen:"open.v1"`
+	HasRecommendation      bool                   `protobuf:"varint,1,opt,name=has_recommendation,json=hasRecommendation,proto3" json:"has_recommendation,omitempty"`                 // False when quorum, majority, or confidence failed
+	NoRecommendationReason string                 `protobuf:"bytes,2,opt,name=no_recommendation_reason,json=noRecommendationReason,proto3" json:"no_recommendation_reason,omitempty"` // Reason when has_recommendation is false
+	Action                 string                 `protobuf:"bytes,3,opt,name=action,proto3" json:"action,omitempty"`                                                                 // SCALE_UP, SCALE_DOWN, or HOLD
+	Target                 int32                  `protobuf:"varint,4,opt,name=target,proto3" json:"target,omitempty"`                                                                // Weighted median of winning targets
+	Confidence             float64                `protobuf:"fixed64,5,opt,name=confidence,proto3" json:"confidence,omitempty"`                                                       // Lesser of support and mean winning confidence
+	Rationale              string                 `protobuf:"bytes,6,opt,name=rationale,proto3" json:"rationale,omitempty"`                                                           // Synthesizer explanation or deterministic voting summary
+	AggregationSummary     string                 `protobuf:"bytes,7,opt,name=aggregation_summary,json=aggregationSummary,proto3" json:"aggregation_summary,omitempty"`               // Deterministic vote summary for audit
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
+}
+
+func (x *ScalingRecommendation) Reset() {
+	*x = ScalingRecommendation{}
+	mi := &file_multi_agent_reasoning_proto_msgTypes[1]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ScalingRecommendation) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ScalingRecommendation) ProtoMessage() {}
+
+func (x *ScalingRecommendation) ProtoReflect() protoreflect.Message {
+	mi := &file_multi_agent_reasoning_proto_msgTypes[1]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ScalingRecommendation.ProtoReflect.Descriptor instead.
+func (*ScalingRecommendation) Descriptor() ([]byte, []int) {
+	return file_multi_agent_reasoning_proto_rawDescGZIP(), []int{1}
+}
+
+func (x *ScalingRecommendation) GetHasRecommendation() bool {
+	if x != nil {
+		return x.HasRecommendation
+	}
+	return false
+}
+
+func (x *ScalingRecommendation) GetNoRecommendationReason() string {
+	if x != nil {
+		return x.NoRecommendationReason
+	}
+	return ""
+}
+
+func (x *ScalingRecommendation) GetAction() string {
+	if x != nil {
+		return x.Action
+	}
+	return ""
+}
+
+func (x *ScalingRecommendation) GetTarget() int32 {
+	if x != nil {
+		return x.Target
+	}
+	return 0
+}
+
+func (x *ScalingRecommendation) GetConfidence() float64 {
+	if x != nil {
+		return x.Confidence
+	}
+	return 0
+}
+
+func (x *ScalingRecommendation) GetRationale() string {
+	if x != nil {
+		return x.Rationale
+	}
+	return ""
+}
+
+func (x *ScalingRecommendation) GetAggregationSummary() string {
+	if x != nil {
+		return x.AggregationSummary
+	}
+	return ""
+}
+
+// Request for the scaling reasoning pipeline
+type ReasonScalingRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	RequestId     string                 `protobuf:"bytes,1,opt,name=request_id,json=requestId,proto3" json:"request_id,omitempty"`
+	SnapshotJson  string                 `protobuf:"bytes,2,opt,name=snapshot_json,json=snapshotJson,proto3" json:"snapshot_json,omitempty"` // Shared decision snapshot (WorkloadSnapshot serialized)
+	ConfigJson    string                 `protobuf:"bytes,3,opt,name=config_json,json=configJson,proto3" json:"config_json,omitempty"`       // min/max replicas, quorum, weights, confidence threshold
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ReasonScalingRequest) Reset() {
+	*x = ReasonScalingRequest{}
+	mi := &file_multi_agent_reasoning_proto_msgTypes[2]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ReasonScalingRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ReasonScalingRequest) ProtoMessage() {}
+
+func (x *ReasonScalingRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_multi_agent_reasoning_proto_msgTypes[2]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ReasonScalingRequest.ProtoReflect.Descriptor instead.
+func (*ReasonScalingRequest) Descriptor() ([]byte, []int) {
+	return file_multi_agent_reasoning_proto_rawDescGZIP(), []int{2}
+}
+
+func (x *ReasonScalingRequest) GetRequestId() string {
+	if x != nil {
+		return x.RequestId
+	}
+	return ""
+}
+
+func (x *ReasonScalingRequest) GetSnapshotJson() string {
+	if x != nil {
+		return x.SnapshotJson
+	}
+	return ""
+}
+
+func (x *ReasonScalingRequest) GetConfigJson() string {
+	if x != nil {
+		return x.ConfigJson
+	}
+	return ""
+}
+
+// Response of the scaling reasoning pipeline
+type ReasonScalingResponse struct {
+	state          protoimpl.MessageState `protogen:"open.v1"`
+	AnalystResults []*AnalystResult       `protobuf:"bytes,1,rep,name=analyst_results,json=analystResults,proto3" json:"analyst_results,omitempty"` // All outcomes by role, including abstentions
+	Recommendation *ScalingRecommendation `protobuf:"bytes,2,opt,name=recommendation,proto3" json:"recommendation,omitempty"`                       // Fixed recommendation for safety evaluation
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
+}
+
+func (x *ReasonScalingResponse) Reset() {
+	*x = ReasonScalingResponse{}
+	mi := &file_multi_agent_reasoning_proto_msgTypes[3]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ReasonScalingResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ReasonScalingResponse) ProtoMessage() {}
+
+func (x *ReasonScalingResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_multi_agent_reasoning_proto_msgTypes[3]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ReasonScalingResponse.ProtoReflect.Descriptor instead.
+func (*ReasonScalingResponse) Descriptor() ([]byte, []int) {
+	return file_multi_agent_reasoning_proto_rawDescGZIP(), []int{3}
+}
+
+func (x *ReasonScalingResponse) GetAnalystResults() []*AnalystResult {
+	if x != nil {
+		return x.AnalystResults
+	}
+	return nil
+}
+
+func (x *ReasonScalingResponse) GetRecommendation() *ScalingRecommendation {
+	if x != nil {
+		return x.Recommendation
+	}
+	return nil
+}
+
 // Request for reasoning
 type ReasoningRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
@@ -38,7 +339,7 @@ type ReasoningRequest struct {
 
 func (x *ReasoningRequest) Reset() {
 	*x = ReasoningRequest{}
-	mi := &file_multi_agent_reasoning_proto_msgTypes[0]
+	mi := &file_multi_agent_reasoning_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -50,7 +351,7 @@ func (x *ReasoningRequest) String() string {
 func (*ReasoningRequest) ProtoMessage() {}
 
 func (x *ReasoningRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_multi_agent_reasoning_proto_msgTypes[0]
+	mi := &file_multi_agent_reasoning_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -63,7 +364,7 @@ func (x *ReasoningRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ReasoningRequest.ProtoReflect.Descriptor instead.
 func (*ReasoningRequest) Descriptor() ([]byte, []int) {
-	return file_multi_agent_reasoning_proto_rawDescGZIP(), []int{0}
+	return file_multi_agent_reasoning_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *ReasoningRequest) GetPrompt() string {
@@ -129,7 +430,7 @@ type ReasoningResponse struct {
 
 func (x *ReasoningResponse) Reset() {
 	*x = ReasoningResponse{}
-	mi := &file_multi_agent_reasoning_proto_msgTypes[1]
+	mi := &file_multi_agent_reasoning_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -141,7 +442,7 @@ func (x *ReasoningResponse) String() string {
 func (*ReasoningResponse) ProtoMessage() {}
 
 func (x *ReasoningResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_multi_agent_reasoning_proto_msgTypes[1]
+	mi := &file_multi_agent_reasoning_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -154,7 +455,7 @@ func (x *ReasoningResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ReasoningResponse.ProtoReflect.Descriptor instead.
 func (*ReasoningResponse) Descriptor() ([]byte, []int) {
-	return file_multi_agent_reasoning_proto_rawDescGZIP(), []int{1}
+	return file_multi_agent_reasoning_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *ReasoningResponse) GetText() string {
@@ -205,7 +506,7 @@ type StatusResponse struct {
 
 func (x *StatusResponse) Reset() {
 	*x = StatusResponse{}
-	mi := &file_multi_agent_reasoning_proto_msgTypes[2]
+	mi := &file_multi_agent_reasoning_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -217,7 +518,7 @@ func (x *StatusResponse) String() string {
 func (*StatusResponse) ProtoMessage() {}
 
 func (x *StatusResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_multi_agent_reasoning_proto_msgTypes[2]
+	mi := &file_multi_agent_reasoning_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -230,7 +531,7 @@ func (x *StatusResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use StatusResponse.ProtoReflect.Descriptor instead.
 func (*StatusResponse) Descriptor() ([]byte, []int) {
-	return file_multi_agent_reasoning_proto_rawDescGZIP(), []int{2}
+	return file_multi_agent_reasoning_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *StatusResponse) GetIsHealthy() bool {
@@ -265,7 +566,36 @@ var File_multi_agent_reasoning_proto protoreflect.FileDescriptor
 
 const file_multi_agent_reasoning_proto_rawDesc = "" +
 	"\n" +
-	"\x1bmulti_agent_reasoning.proto\x12\x12multianalreasoning\x1a\x1bgoogle/protobuf/empty.proto\"\xc5\x01\n" +
+	"\x1bmulti_agent_reasoning.proto\x12\x12multianalreasoning\x1a\x1bgoogle/protobuf/empty.proto\"\xd4\x01\n" +
+	"\rAnalystResult\x12\x12\n" +
+	"\x04role\x18\x01 \x01(\tR\x04role\x12\x16\n" +
+	"\x06action\x18\x02 \x01(\tR\x06action\x12\x16\n" +
+	"\x06target\x18\x03 \x01(\x05R\x06target\x12\x1e\n" +
+	"\n" +
+	"confidence\x18\x04 \x01(\x01R\n" +
+	"confidence\x12\x1c\n" +
+	"\trationale\x18\x05 \x01(\tR\trationale\x12+\n" +
+	"\x11abstention_reason\x18\x06 \x01(\tR\x10abstentionReason\x12\x14\n" +
+	"\x05error\x18\a \x01(\tR\x05error\"\x9f\x02\n" +
+	"\x15ScalingRecommendation\x12-\n" +
+	"\x12has_recommendation\x18\x01 \x01(\bR\x11hasRecommendation\x128\n" +
+	"\x18no_recommendation_reason\x18\x02 \x01(\tR\x16noRecommendationReason\x12\x16\n" +
+	"\x06action\x18\x03 \x01(\tR\x06action\x12\x16\n" +
+	"\x06target\x18\x04 \x01(\x05R\x06target\x12\x1e\n" +
+	"\n" +
+	"confidence\x18\x05 \x01(\x01R\n" +
+	"confidence\x12\x1c\n" +
+	"\trationale\x18\x06 \x01(\tR\trationale\x12/\n" +
+	"\x13aggregation_summary\x18\a \x01(\tR\x12aggregationSummary\"{\n" +
+	"\x14ReasonScalingRequest\x12\x1d\n" +
+	"\n" +
+	"request_id\x18\x01 \x01(\tR\trequestId\x12#\n" +
+	"\rsnapshot_json\x18\x02 \x01(\tR\fsnapshotJson\x12\x1f\n" +
+	"\vconfig_json\x18\x03 \x01(\tR\n" +
+	"configJson\"\xb6\x01\n" +
+	"\x15ReasonScalingResponse\x12J\n" +
+	"\x0fanalyst_results\x18\x01 \x03(\v2!.multianalreasoning.AnalystResultR\x0eanalystResults\x12Q\n" +
+	"\x0erecommendation\x18\x02 \x01(\v2).multianalreasoning.ScalingRecommendationR\x0erecommendation\"\xc5\x01\n" +
 	"\x10ReasoningRequest\x12\x16\n" +
 	"\x06prompt\x18\x01 \x01(\tR\x06prompt\x12\x1d\n" +
 	"\n" +
@@ -289,9 +619,10 @@ const file_multi_agent_reasoning_proto_rawDesc = "" +
 	"is_healthy\x18\x01 \x01(\bR\tisHealthy\x12%\n" +
 	"\x0estatus_message\x18\x02 \x01(\tR\rstatusMessage\x12\x1c\n" +
 	"\ttimestamp\x18\x03 \x01(\x03R\ttimestamp\x12\x18\n" +
-	"\aversion\x18\x04 \x01(\tR\aversion2\xbc\x01\n" +
+	"\aversion\x18\x04 \x01(\tR\aversion2\xa2\x02\n" +
 	"\x1aMultiAgentReasoningService\x12U\n" +
-	"\x06Reason\x12$.multianalreasoning.ReasoningRequest\x1a%.multianalreasoning.ReasoningResponse\x12G\n" +
+	"\x06Reason\x12$.multianalreasoning.ReasoningRequest\x1a%.multianalreasoning.ReasoningResponse\x12d\n" +
+	"\rReasonScaling\x12(.multianalreasoning.ReasonScalingRequest\x1a).multianalreasoning.ReasonScalingResponse\x12G\n" +
 	"\tGetStatus\x12\x16.google.protobuf.Empty\x1a\".multianalreasoning.StatusResponseb\x06proto3"
 
 var (
@@ -306,23 +637,31 @@ func file_multi_agent_reasoning_proto_rawDescGZIP() []byte {
 	return file_multi_agent_reasoning_proto_rawDescData
 }
 
-var file_multi_agent_reasoning_proto_msgTypes = make([]protoimpl.MessageInfo, 3)
+var file_multi_agent_reasoning_proto_msgTypes = make([]protoimpl.MessageInfo, 7)
 var file_multi_agent_reasoning_proto_goTypes = []any{
-	(*ReasoningRequest)(nil),  // 0: multianalreasoning.ReasoningRequest
-	(*ReasoningResponse)(nil), // 1: multianalreasoning.ReasoningResponse
-	(*StatusResponse)(nil),    // 2: multianalreasoning.StatusResponse
-	(*emptypb.Empty)(nil),     // 3: google.protobuf.Empty
+	(*AnalystResult)(nil),         // 0: multianalreasoning.AnalystResult
+	(*ScalingRecommendation)(nil), // 1: multianalreasoning.ScalingRecommendation
+	(*ReasonScalingRequest)(nil),  // 2: multianalreasoning.ReasonScalingRequest
+	(*ReasonScalingResponse)(nil), // 3: multianalreasoning.ReasonScalingResponse
+	(*ReasoningRequest)(nil),      // 4: multianalreasoning.ReasoningRequest
+	(*ReasoningResponse)(nil),     // 5: multianalreasoning.ReasoningResponse
+	(*StatusResponse)(nil),        // 6: multianalreasoning.StatusResponse
+	(*emptypb.Empty)(nil),         // 7: google.protobuf.Empty
 }
 var file_multi_agent_reasoning_proto_depIdxs = []int32{
-	0, // 0: multianalreasoning.MultiAgentReasoningService.Reason:input_type -> multianalreasoning.ReasoningRequest
-	3, // 1: multianalreasoning.MultiAgentReasoningService.GetStatus:input_type -> google.protobuf.Empty
-	1, // 2: multianalreasoning.MultiAgentReasoningService.Reason:output_type -> multianalreasoning.ReasoningResponse
-	2, // 3: multianalreasoning.MultiAgentReasoningService.GetStatus:output_type -> multianalreasoning.StatusResponse
-	2, // [2:4] is the sub-list for method output_type
-	0, // [0:2] is the sub-list for method input_type
-	0, // [0:0] is the sub-list for extension type_name
-	0, // [0:0] is the sub-list for extension extendee
-	0, // [0:0] is the sub-list for field type_name
+	0, // 0: multianalreasoning.ReasonScalingResponse.analyst_results:type_name -> multianalreasoning.AnalystResult
+	1, // 1: multianalreasoning.ReasonScalingResponse.recommendation:type_name -> multianalreasoning.ScalingRecommendation
+	4, // 2: multianalreasoning.MultiAgentReasoningService.Reason:input_type -> multianalreasoning.ReasoningRequest
+	2, // 3: multianalreasoning.MultiAgentReasoningService.ReasonScaling:input_type -> multianalreasoning.ReasonScalingRequest
+	7, // 4: multianalreasoning.MultiAgentReasoningService.GetStatus:input_type -> google.protobuf.Empty
+	5, // 5: multianalreasoning.MultiAgentReasoningService.Reason:output_type -> multianalreasoning.ReasoningResponse
+	3, // 6: multianalreasoning.MultiAgentReasoningService.ReasonScaling:output_type -> multianalreasoning.ReasonScalingResponse
+	6, // 7: multianalreasoning.MultiAgentReasoningService.GetStatus:output_type -> multianalreasoning.StatusResponse
+	5, // [5:8] is the sub-list for method output_type
+	2, // [2:5] is the sub-list for method input_type
+	2, // [2:2] is the sub-list for extension type_name
+	2, // [2:2] is the sub-list for extension extendee
+	0, // [0:2] is the sub-list for field type_name
 }
 
 func init() { file_multi_agent_reasoning_proto_init() }
@@ -336,7 +675,7 @@ func file_multi_agent_reasoning_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_multi_agent_reasoning_proto_rawDesc), len(file_multi_agent_reasoning_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   3,
+			NumMessages:   7,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

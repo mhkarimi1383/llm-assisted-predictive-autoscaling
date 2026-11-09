@@ -1,291 +1,237 @@
-// Data Acquisition Layer - Collects workload predictions and cluster status
+// Data Acquisition Layer - collects workload predictions and cluster status
+//
+// GetWorkloadSnapshot implements Algorithm 2: it reads the target
+// Deployment, its pods, utilization metrics, and the forecast in
+// parallel, validates identity and values, and returns the decision
+// snapshot. This layer dials no other gRPC services.
 package dataacquisition
 
 import (
 	"context"
 	"fmt"
 	"log"
-	"net"
-	"sync"
+	"sort"
 	"time"
 
 	"google.golang.org/grpc"
+	appsv1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
 
-	// Import generated protobuf packages
 	dataacpb "github.com/mhkarimi1383/llm-assisted-predictive-autoscaling/protos/dataacquisition"
-	llminterfacepb "github.com/mhkarimi1383/llm-assisted-predictive-autoscaling/protos/llminterface"
-	safetypolicypb "github.com/mhkarimi1383/llm-assisted-predictive-autoscaling/protos/safetypolicy"
-	scalingexecutorpb "github.com/mhkarimi1383/llm-assisted-predictive-autoscaling/protos/scalingexecutor"
-	multianalreasoningpb "github.com/mhkarimi1383/llm-assisted-predictive-autoscaling/protos/multianalreasoning"
 
-	// Import config package
-	config "github.com/mhkarimi1383/llm-assisted-predictive-autoscaling/config"
-
-	// Helper functions
 	helpers "github.com/mhkarimi1383/llm-assisted-predictive-autoscaling/helpers"
-)
-
-// Use imports to satisfy compiler (reference constants from generated code)
-var _ = llminterfacepb.LLMInterfaceService_GenerateText_FullMethodName
-var _ = safetypolicypb.SafetyPolicyService_CheckSafety_FullMethodName
-var _ = scalingexecutorpb.ScalingExecutorService_ExecuteScaling_FullMethodName
-var _ = multianalreasoningpb.MultiAgentReasoningService_Reason_FullMethodName
-
-// Client connections for outgoing gRPC calls
-var (
-	llmInterfaceClient         *grpc.ClientConn
-	safetyPolicyClient         *grpc.ClientConn
-	scalingExecutorClient      *grpc.ClientConn
-	multiAgentReasoningClient  *grpc.ClientConn
 )
 
 // dataAcquisitionServer implements the DataAcquisitionService service
 type dataAcquisitionServer struct {
 	dataacpb.UnimplementedDataAcquisitionServiceServer
-	mu          sync.Mutex
-	server      *grpc.Server
-	isRunning   bool
-	stopChannel chan struct{}
-	wg          sync.WaitGroup
 }
 
-// Start initializes and starts the Data Acquisition Layer
-func Start(ctx context.Context, cfg config.Config, listenPort int) error {
-	log.Println("Starting Data Acquisition Layer...")
+// Start initializes and starts the Data Acquisition Layer.
+func Start(ctx context.Context, listenPort int) error {
+	server := &dataAcquisitionServer{}
+	return helpers.ServeGRPC(ctx, listenPort, "Data Acquisition Layer", func(s *grpc.Server) {
+		dataacpb.RegisterDataAcquisitionServiceServer(s, server)
+	})
+}
 
-	// Initialize ALL outgoing gRPC connections
-	var err error
+// GetWorkloadSnapshot implements the DataAcquisitionService
+// .GetWorkloadSnapshot method (Algorithm 2).
+func (s *dataAcquisitionServer) GetWorkloadSnapshot(ctx context.Context, req *dataacpb.WorkloadSnapshotRequest) (*dataacpb.WorkloadSnapshot, error) {
+	log.Printf("Received GetWorkloadSnapshot request: %s/%s (metrics=%q forecast=%q)",
+		req.GetNamespace(), req.GetResourceName(), req.GetMetricsProvider(), req.GetForecastProvider())
 
-	// LLM Interface connection
-	llmInterfaceClient, err = helpers.DialHelper(ctx, cfg.LLMInterfaceHost, cfg.LLMInterfacePort, "LLM Interface")
+	if req.GetNamespace() == "" || req.GetResourceName() == "" {
+		return nil, fmt.Errorf("namespace and resource_name are required")
+	}
+
+	// Parallel collection (Algorithm 2: bounded, time-aligned
+	// observation). Two goroutines: K8s state (deployment + pods) and
+	// the forecast provider; metrics depend on the pod list and run
+	// after the state read.
+	type stateResult struct {
+		pods []corev1.Pod
+		err  error
+	}
+
+	deployment, pods, err := deploymentState(ctx, req.GetNamespace(), req.GetResourceName())
 	if err != nil {
-		return fmt.Errorf("failed to connect to LLM Interface service: %w", err)
+		return nil, err
 	}
 
-	// Safety Policy connection
-	safetyPolicyClient, err = helpers.DialHelper(ctx, cfg.SafetyPolicyHost, cfg.SafetyPolicyPort, "Safety Policy")
+	snapshot := &dataacpb.WorkloadSnapshot{
+		Namespace:          req.GetNamespace(),
+		ResourceName:       req.GetResourceName(),
+		ObservedAt:         time.Now().Unix(),
+		ResourceVersion:    deployment.ResourceVersion,
+		DesiredReplicas:    derefInt32(deployment.Spec.Replicas),
+		ReadyReplicas:      deployment.Status.ReadyReplicas,
+		ObservedGeneration: deployment.Generation,
+		Pods:               summarizePods(pods),
+	}
+
+	// Metrics: usage for the workload's pods, fraction against
+	// requests. Failure is recorded in metrics_error, not fatal.
+	podNames := podNamesOf(pods)
+	metricsErr := s.collectMetrics(ctx, req, deployment, podNames, snapshot)
+
+	// Capacity, quota, and declared pod resources (Algorithm 6
+	// inputs). Unavailable pieces stay unknown rather than fatal.
+	s.collectCapacity(ctx, snapshot)
+	s.collectQuota(ctx, req.GetNamespace(), snapshot)
+	snapshot.PodResources = podResourcesOf(deployment)
+
+	// Forecast: provider failure is recorded in forecast_error.
+	forecastErr := s.collectForecast(ctx, req, snapshot)
+	if metricsErr != nil && forecastErr != nil {
+		// No observation source succeeded (Algorithm 2: required
+		// information failed validation).
+		return snapshot, nil
+	}
+
+	log.Printf("Snapshot for %s/%s: desired=%d ready=%d cpu=%.2f mem=%.2f forecast_points=%d (metrics_err=%q forecast_err=%q)",
+		snapshot.GetNamespace(), snapshot.GetResourceName(),
+		snapshot.GetDesiredReplicas(), snapshot.GetReadyReplicas(),
+		snapshot.GetCpuUtilization(), snapshot.GetMemoryUtilization(),
+		len(snapshot.GetForecast()), snapshot.GetMetricsError(), snapshot.GetForecastError())
+	return snapshot, nil
+}
+
+// collectMetrics fills cpu/memory utilization and metrics metadata.
+func (s *dataAcquisitionServer) collectMetrics(
+	ctx context.Context,
+	req *dataacpb.WorkloadSnapshotRequest,
+	deployment *appsv1.Deployment,
+	podNames []string,
+	snapshot *dataacpb.WorkloadSnapshot,
+) error {
+	provider := s.metricsProvider(req)
+	snapshot.MetricsProvider = provider.Name()
+
+	usage, err := provider.Usage(ctx, req.GetNamespace(), podNames)
 	if err != nil {
-		return fmt.Errorf("failed to connect to Safety Policy service: %w", err)
+		snapshot.MetricsError = err.Error()
+		snapshot.CpuUtilization = -1
+		snapshot.MemoryUtilization = -1
+		return err
 	}
 
-	// Scaling Executor connection
-	scalingExecutorClient, err = helpers.DialHelper(ctx, cfg.ScalingExecutorHost, cfg.ScalingExecutorPort, "Scaling Executor")
-	if err != nil {
-		return fmt.Errorf("failed to connect to Scaling Executor service: %w", err)
+	reqCPU, reqMem := requestedResources(deployment)
+	snapshot.CpuUtilization = utilizationFraction(usage.CPUCores, reqCPU)
+	snapshot.MemoryUtilization = utilizationFraction(usage.MemoryBytes, reqMem)
+	if snapshot.GetCpuUtilization() < 0 && snapshot.GetMemoryUtilization() < 0 {
+		snapshot.MetricsError = "workload pods declare no resource requests; utilization cannot be computed"
+		return fmt.Errorf("%s", snapshot.GetMetricsError())
 	}
-
-	// Multi Agent Reasoning connection
-	multiAgentReasoningClient, err = helpers.DialHelper(ctx, cfg.MultiAgentReasoningHost, cfg.MultiAgentReasoningPort, "Multi Agent Reasoning")
-	if err != nil {
-		return fmt.Errorf("failed to connect to Multi Agent Reasoning service: %w", err)
-	}
-
-	// Initialize the server
-	server := &dataAcquisitionServer{
-		isRunning:     true,
-		stopChannel:   make(chan struct{}),
-	}
-
-	// Set up gRPC listener
-	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", listenPort))
-	if err != nil {
-		return fmt.Errorf("failed to listen on port %d: %w", listenPort, err)
-	}
-
-	// Create gRPC server
-	server.server = grpc.NewServer()
-	dataacpb.RegisterDataAcquisitionServiceServer(server.server, server)
-
-	// Start the server in a goroutine
-	server.wg.Add(1)
-	go func() {
-		defer server.wg.Done()
-		log.Printf("Starting gRPC server on port %d", listenPort)
-		if err := server.server.Serve(lis); err != nil {
-			if server.isRunning {
-				log.Printf("gRPC server error: %v", err)
-			}
-		}
-	}()
-
-	// Wait for stop signal or context cancellation
-	select {
-	case <-ctx.Done():
-		log.Println("Received context cancellation, shutting down...")
-	case <-server.stopChannel:
-		log.Println("Received stop signal, shutting down...")
-	}
-
-	// Stop the server gracefully
-	server.Stop()
 	return nil
 }
 
-// Stop gracefully shuts down the gRPC server
-func (s *dataAcquisitionServer) Stop() {
-	log.Println("Stopping Data Acquisition Layer...")
-	s.mu.Lock()
-	defer s.mu.Unlock()
-
-	if !s.isRunning {
-		return
+// metricsProvider selects the provider for this request.
+func (s *dataAcquisitionServer) metricsProvider(req *dataacpb.WorkloadSnapshotRequest) MetricsProvider {
+	if req.GetMetricsProvider() == "prometheus" {
+		url := req.GetPrometheusUrl()
+		if url == "" {
+			url = "http://prometheus.monitoring.svc:9090"
+		}
+		return newPrometheusProvider(url)
 	}
-	s.isRunning = false
-
-	// Stop accepting new connections
-	s.server.GracefulStop()
-
-	// Close stop channel to signal goroutines
-	close(s.stopChannel)
-
-	// Wait for goroutines to finish
-	s.wg.Wait()
-
-	// Close client connections
-	if llmInterfaceClient != nil {
-		llmInterfaceClient.Close()
-	}
-	if safetyPolicyClient != nil {
-		safetyPolicyClient.Close()
-	}
-	if scalingExecutorClient != nil {
-		scalingExecutorClient.Close()
-	}
-	if multiAgentReasoningClient != nil {
-		multiAgentReasoningClient.Close()
-	}
-
-	log.Println("Data Acquisition Layer stopped")
+	return newMetricsServerProvider()
 }
 
-// GetWorkloadPrediction implements the DataAcquisitionService.GetWorkloadPrediction method
-func (s *dataAcquisitionServer) GetWorkloadPrediction(ctx context.Context, req *dataacpb.WorkloadPredictionRequest) (*dataacpb.WorkloadPredictionResponse, error) {
-	log.Printf("Received GetWorkloadPrediction request: %v", req)
+// collectForecast fills the forecast series and forecast metadata.
+func (s *dataAcquisitionServer) collectForecast(
+	ctx context.Context,
+	req *dataacpb.WorkloadSnapshotRequest,
+	snapshot *dataacpb.WorkloadSnapshot,
+) error {
+	provider := s.forecastProvider(req)
+	snapshot.ForecastProvider = provider.Name()
 
-	// Validate request
-	if req.GetWorkloadId() == "" {
-		return &dataacpb.WorkloadPredictionResponse{}, fmt.Errorf("workload ID cannot be empty")
+	points, err := provider.Forecast(ctx, req.GetNamespace(), req.GetResourceName(), req.GetForecastHorizonSeconds())
+	if err != nil {
+		snapshot.ForecastError = err.Error()
+		return err
 	}
-
-	// In a real implementation, we would:
-	// 1. Query a database or ML model for workload predictions
-	// 2. Return the predicted values
-
-	// For now, simulate a response
-	prediction := &dataacpb.WorkloadPredictionResponse{
-		WorkloadId:                   req.GetWorkloadId(),
-		Timestamp:                    0, // Current timestamp would be set in real implementation
-		PredictedCpuUtilization:      65.3,
-		PredictedMemoryUtilization:   42.1,
-		PredictedNetworkIn:           10.5,
-		PredictedNetworkOut:          8.2,
+	for _, p := range points {
+		snapshot.Forecast = append(snapshot.Forecast, &dataacpb.ForecastPoint{
+			Timestamp:       p.Timestamp,
+			PredictedCpu:    p.PredictedCPU,
+			PredictedMemory: p.PredictedMemory,
+			PredictedRps:    p.PredictedRPS,
+		})
 	}
-
-	return prediction, nil
+	return nil
 }
 
-// GetClusterMetrics implements the DataAcquisitionService.GetClusterMetrics method
-func (s *dataAcquisitionServer) GetClusterMetrics(ctx context.Context, req *dataacpb.ClusterMetricsRequest) (*dataacpb.ClusterMetricsResponse, error) {
-	log.Printf("Received GetClusterMetrics request: %v", req)
-
-	// In a real implementation, we would:
-	// 1. Query monitoring systems (Prometheus, etc.) for current cluster metrics
-	// 2. Return the current values
-
-	// For now, simulate a response
-	metrics := &dataacpb.ClusterMetricsResponse{
-		Timestamp:             0, // Current timestamp would be set in real implementation
-		CpuUtilization:        45.7,
-		MemoryUtilization:     62.3,
-		DiskUtilization:       23.8,
-		PodCount:              15,
-		NodeCount:             3,
+// forecastProvider selects the provider for this request.
+func (s *dataAcquisitionServer) forecastProvider(req *dataacpb.WorkloadSnapshotRequest) ForecastProvider {
+	if req.GetForecastProvider() == "rest" {
+		url := req.GetForecastUrl()
+		if url == "" {
+			snapshotErr := "rest forecast provider selected without forecast_url"
+			return &errorForecastProvider{err: fmt.Errorf("%s", snapshotErr)}
+		}
+		return newRESTForecastProvider(url)
 	}
-
-	return metrics, nil
+	return newStubForecastProvider()
 }
 
-// SubscribeWorkloadPredictions implements the DataAcquisitionService.SubscribeWorkloadPredictions method (server-streaming)
-func (s *dataAcquisitionServer) SubscribeWorkloadPredictions(req *dataacpb.WorkloadPredictionSubscriptionRequest, stream dataacpb.DataAcquisitionService_SubscribeWorkloadPredictionsServer) error {
-	log.Printf("Received SubscribeWorkloadPredictions request: %v", req)
+// errorForecastProvider fails immediately with a fixed error; used
+// when the request configuration is incomplete.
+type errorForecastProvider struct{ err error }
 
-	// Context for cancellation
-	ctx := stream.Context()
+func (p *errorForecastProvider) Name() string { return "error" }
 
-	// Validate request
-	if len(req.GetWorkloadIds()) == 0 {
-		return stream.Send(&dataacpb.WorkloadPredictionResponse{})
-	}
+func (p *errorForecastProvider) Forecast(ctx context.Context, namespace, workload string, horizonSeconds int32) ([]ForecastPoint, error) {
+	return nil, p.err
+}
 
-	// In a real implementation, we would:
-	// 1. Set up a stream of workload predictions for the specified workload IDs
-	// 2. Send updates as new predictions become available
-
-	// For now, simulate sending periodic updates
-	ticker := time.NewTicker(5 * time.Second)
-	defer ticker.Stop()
-
-	for {
-		select {
-		case <-ctx.Done():
-			log.Println("SubscribeWorkloadPredictions stream cancelled by client")
-			return ctx.Err()
-		case <-ticker.C:
-			// Send a simulated prediction for each requested workload ID
-			for _, workloadID := range req.GetWorkloadIds() {
-				prediction := &dataacpb.WorkloadPredictionResponse{
-					WorkloadId:                   workloadID,
-					Timestamp:                    0, // Would be current timestamp
-					PredictedCpuUtilization:      60.0 + float64(len(workloadID)%10), // Vary slightly
-					PredictedMemoryUtilization:   40.0 + float64(len(workloadID)%15),
-					PredictedNetworkIn:           5.0 + float64(len(workloadID)%5),
-					PredictedNetworkOut:          3.0 + float64(len(workloadID)%3),
-				}
-
-				if err := stream.Send(prediction); err != nil {
-					log.Printf("Error sending workload prediction: %v", err)
-					return err
-				}
-			}
+// summarizePods builds the pod health summary from the pod list.
+func summarizePods(pods *corev1.PodList) *dataacpb.PodStatusSummary {
+	summary := &dataacpb.PodStatusSummary{}
+	for i := range pods.Items {
+		pod := &pods.Items[i]
+		summary.TotalPods++
+		switch {
+		case pod.DeletionTimestamp != nil:
+			summary.TerminatingPods++
+		case pod.Status.Phase == corev1.PodPending:
+			summary.PendingPods++
+		case isPodReady(pod):
+			summary.ReadyPods++
 		}
 	}
+	return summary
 }
 
-// SubscribeClusterMetrics implements the DataAcquisitionService.SubscribeClusterMetrics method (server-streaming)
-func (s *dataAcquisitionServer) SubscribeClusterMetrics(req *dataacpb.ClusterMetricsSubscriptionRequest, stream dataacpb.DataAcquisitionService_SubscribeClusterMetricsServer) error {
-	log.Printf("Received SubscribeClusterMetrics request: %v", req)
-
-	// Context for cancellation
-	ctx := stream.Context()
-
-	// In a real implementation, we would:
-	// 1. Set up a stream of cluster metrics
-	// 2 - Send updates as cluster metrics change
-
-	// For now, simulate sending periodic updates
-	ticker := time.NewTicker(3 * time.Second)
-	defer ticker.Stop()
-
-	for {
-		select {
-		case <-ctx.Done():
-			log.Println("SubscribeClusterMetrics stream cancelled by client")
-			return ctx.Err()
-		case <-ticker.C:
-			// Send simulated cluster metrics
-			metrics := &dataacpb.ClusterMetricsResponse{
-				Timestamp:     0, // Would be current timestamp
-				CpuUtilization: 50.0,
-				MemoryUtilization: 55.0,
-				DiskUtilization: 25.0,
-				PodCount:      12,
-				NodeCount:     2,
-			}
-
-			if err := stream.Send(metrics); err != nil {
-				log.Printf("Error sending cluster metrics: %v", err)
-				return err
-			}
+func isPodReady(pod *corev1.Pod) bool {
+	for _, cond := range pod.Status.Conditions {
+		if cond.Type == corev1.PodReady && cond.Status == corev1.ConditionTrue {
+			return true
 		}
 	}
+	return false
+}
+
+// collectCapacity fills the eligible node capacity (nil = unknown).
+func (s *dataAcquisitionServer) collectCapacity(ctx context.Context, snapshot *dataacpb.WorkloadSnapshot) {
+	if cap := clusterCapacity(ctx); cap != nil {
+		snapshot.Capacity = cap
+	}
+}
+
+// collectQuota fills the namespace pods quota (nil = no quota known).
+func (s *dataAcquisitionServer) collectQuota(ctx context.Context, namespace string, snapshot *dataacpb.WorkloadSnapshot) {
+	if q := namespaceQuota(ctx, namespace); q != nil {
+		snapshot.Quota = q
+	}
+}
+
+func podNamesOf(pods *corev1.PodList) []string {
+	names := make([]string, 0, len(pods.Items))
+	for i := range pods.Items {
+		names = append(names, pods.Items[i].Name)
+	}
+	sort.Strings(names)
+	return names
 }

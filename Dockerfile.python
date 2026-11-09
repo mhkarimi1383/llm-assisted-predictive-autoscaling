@@ -1,0 +1,27 @@
+# Dockerfile for the Python multi-agent reasoning service.
+# Generated proto code is committed under protos/, so no protoc in-image.
+
+FROM python:3.13-slim
+
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
+
+RUN useradd -u 1000 -m -U appuser
+
+WORKDIR /app
+
+# Cache dependencies first: install the project with uv.
+COPY pyproject.toml uv.lock README.md LICENSE ./
+RUN uv sync --frozen --no-install-project --no-dev
+
+COPY multi_agent_reasoning/ multi_agent_reasoning/
+COPY protos/ protos/
+COPY helpers/ helpers/
+RUN uv sync --frozen --no-dev
+
+USER appuser
+
+EXPOSE 50055
+
+# Absolute path: exec-form CMD must point at the venv interpreter
+# (a relative path resolves to the system python and loses deps).
+CMD ["/app/.venv/bin/python", "-m", "multi_agent_reasoning.main"]

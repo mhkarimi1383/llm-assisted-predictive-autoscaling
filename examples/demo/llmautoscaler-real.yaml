@@ -1,0 +1,38 @@
+# LLMAutoscaler variant using a real OpenAI-compatible provider.
+# The API key comes from a Secret; create it with:
+#
+#   kubectl -n default create secret generic llm-api-key \
+#     --from-literal=key=<your-api-key>
+---
+apiVersion: autoscaling.karimi.dev/v1alpha1
+kind: LLMAutoscaler
+metadata:
+  name: demo-frontend-real
+  namespace: default
+spec:
+  scaleTargetRef:
+    kind: Deployment
+    name: demo-frontend
+  minReplicas: 2
+  maxReplicas: 10
+  llm:
+    endpoint: "http://ollama.ollama.svc:11434/v1"   # or https://api.openai.com/v1
+    model: "llama3.2:3b"
+    apiKeySecret:
+      name: llm-api-key
+      key: key
+  reasoning:
+    quorum: 3
+    confidenceThreshold: 0.6
+    timeoutSeconds: 45
+  safety:
+    cooldownSeconds: 120
+    maxScaleUpPercent: 100
+    maxScaleDownPercent: 25
+    minStepReplicas: 1
+    stabilizationWindowSeconds: 300
+    maxActionsPerHour: 20
+  metrics:
+    provider: metrics-server
+  forecast:
+    provider: stub

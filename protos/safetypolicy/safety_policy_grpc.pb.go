@@ -23,6 +23,7 @@ const (
 	SafetyPolicyService_ApplySafetyPolicy_FullMethodName  = "/safetypolicy.SafetyPolicyService/ApplySafetyPolicy"
 	SafetyPolicyService_GetSafetyPolicies_FullMethodName  = "/safetypolicy.SafetyPolicyService/GetSafetyPolicies"
 	SafetyPolicyService_UpdateSafetyPolicy_FullMethodName = "/safetypolicy.SafetyPolicyService/UpdateSafetyPolicy"
+	SafetyPolicyService_EvaluateScaling_FullMethodName    = "/safetypolicy.SafetyPolicyService/EvaluateScaling"
 )
 
 // SafetyPolicyServiceClient is the client API for SafetyPolicyService service.
@@ -39,6 +40,10 @@ type SafetyPolicyServiceClient interface {
 	GetSafetyPolicies(ctx context.Context, in *GetSafetyPoliciesRequest, opts ...grpc.CallOption) (*GetSafetyPoliciesResponse, error)
 	// Update safety policies (admin only)
 	UpdateSafetyPolicy(ctx context.Context, in *UpdateSafetyPolicyRequest, opts ...grpc.CallOption) (*UpdateSafetyPolicyResponse, error)
+	// Deterministic evaluation of a scaling recommendation against hard
+	// constraints (Algorithm 6). Independent of the LLM: an approved or
+	// clamped verdict is the only way a scaling write may proceed.
+	EvaluateScaling(ctx context.Context, in *EvaluateScalingRequest, opts ...grpc.CallOption) (*ScalingVerdictResponse, error)
 }
 
 type safetyPolicyServiceClient struct {
@@ -89,6 +94,16 @@ func (c *safetyPolicyServiceClient) UpdateSafetyPolicy(ctx context.Context, in *
 	return out, nil
 }
 
+func (c *safetyPolicyServiceClient) EvaluateScaling(ctx context.Context, in *EvaluateScalingRequest, opts ...grpc.CallOption) (*ScalingVerdictResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ScalingVerdictResponse)
+	err := c.cc.Invoke(ctx, SafetyPolicyService_EvaluateScaling_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // SafetyPolicyServiceServer is the server API for SafetyPolicyService service.
 // All implementations must embed UnimplementedSafetyPolicyServiceServer
 // for forward compatibility.
@@ -103,6 +118,10 @@ type SafetyPolicyServiceServer interface {
 	GetSafetyPolicies(context.Context, *GetSafetyPoliciesRequest) (*GetSafetyPoliciesResponse, error)
 	// Update safety policies (admin only)
 	UpdateSafetyPolicy(context.Context, *UpdateSafetyPolicyRequest) (*UpdateSafetyPolicyResponse, error)
+	// Deterministic evaluation of a scaling recommendation against hard
+	// constraints (Algorithm 6). Independent of the LLM: an approved or
+	// clamped verdict is the only way a scaling write may proceed.
+	EvaluateScaling(context.Context, *EvaluateScalingRequest) (*ScalingVerdictResponse, error)
 	mustEmbedUnimplementedSafetyPolicyServiceServer()
 }
 
@@ -124,6 +143,9 @@ func (UnimplementedSafetyPolicyServiceServer) GetSafetyPolicies(context.Context,
 }
 func (UnimplementedSafetyPolicyServiceServer) UpdateSafetyPolicy(context.Context, *UpdateSafetyPolicyRequest) (*UpdateSafetyPolicyResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method UpdateSafetyPolicy not implemented")
+}
+func (UnimplementedSafetyPolicyServiceServer) EvaluateScaling(context.Context, *EvaluateScalingRequest) (*ScalingVerdictResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method EvaluateScaling not implemented")
 }
 func (UnimplementedSafetyPolicyServiceServer) mustEmbedUnimplementedSafetyPolicyServiceServer() {}
 func (UnimplementedSafetyPolicyServiceServer) testEmbeddedByValue()                             {}
@@ -218,6 +240,24 @@ func _SafetyPolicyService_UpdateSafetyPolicy_Handler(srv interface{}, ctx contex
 	return interceptor(ctx, in, info, handler)
 }
 
+func _SafetyPolicyService_EvaluateScaling_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(EvaluateScalingRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(SafetyPolicyServiceServer).EvaluateScaling(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: SafetyPolicyService_EvaluateScaling_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(SafetyPolicyServiceServer).EvaluateScaling(ctx, req.(*EvaluateScalingRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // SafetyPolicyService_ServiceDesc is the grpc.ServiceDesc for SafetyPolicyService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -240,6 +280,10 @@ var SafetyPolicyService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "UpdateSafetyPolicy",
 			Handler:    _SafetyPolicyService_UpdateSafetyPolicy_Handler,
+		},
+		{
+			MethodName: "EvaluateScaling",
+			Handler:    _SafetyPolicyService_EvaluateScaling_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

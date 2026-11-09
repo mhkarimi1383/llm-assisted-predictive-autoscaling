@@ -55,6 +55,11 @@ class DataAcquisitionServiceStub:
                 request_serializer=data__acquisition__pb2.ClusterMetricsSubscriptionRequest.SerializeToString,
                 response_deserializer=data__acquisition__pb2.ClusterMetricsResponse.FromString,
                 _registered_method=True)
+        self.GetWorkloadSnapshot = channel.unary_unary(
+                '/dataacquisition.DataAcquisitionService/GetWorkloadSnapshot',
+                request_serializer=data__acquisition__pb2.WorkloadSnapshotRequest.SerializeToString,
+                response_deserializer=data__acquisition__pb2.WorkloadSnapshot.FromString,
+                _registered_method=True)
 
 
 class DataAcquisitionServiceServicer:
@@ -89,6 +94,15 @@ class DataAcquisitionServiceServicer:
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
+    def GetWorkloadSnapshot(self, request, context):
+        """Collect a decision snapshot for one workload (Algorithm 2): the
+        workload state, current utilization metrics, and the forecast
+        over the decision horizon, collected in parallel and validated.
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
 
 def add_DataAcquisitionServiceServicer_to_server(servicer, server):
     rpc_method_handlers = {
@@ -111,6 +125,11 @@ def add_DataAcquisitionServiceServicer_to_server(servicer, server):
                     servicer.SubscribeClusterMetrics,
                     request_deserializer=data__acquisition__pb2.ClusterMetricsSubscriptionRequest.FromString,
                     response_serializer=data__acquisition__pb2.ClusterMetricsResponse.SerializeToString,
+            ),
+            'GetWorkloadSnapshot': grpc.unary_unary_rpc_method_handler(
+                    servicer.GetWorkloadSnapshot,
+                    request_deserializer=data__acquisition__pb2.WorkloadSnapshotRequest.FromString,
+                    response_serializer=data__acquisition__pb2.WorkloadSnapshot.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -222,6 +241,33 @@ class DataAcquisitionService:
             '/dataacquisition.DataAcquisitionService/SubscribeClusterMetrics',
             data__acquisition__pb2.ClusterMetricsSubscriptionRequest.SerializeToString,
             data__acquisition__pb2.ClusterMetricsResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def GetWorkloadSnapshot(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/dataacquisition.DataAcquisitionService/GetWorkloadSnapshot',
+            data__acquisition__pb2.WorkloadSnapshotRequest.SerializeToString,
+            data__acquisition__pb2.WorkloadSnapshot.FromString,
             options,
             channel_credentials,
             insecure,

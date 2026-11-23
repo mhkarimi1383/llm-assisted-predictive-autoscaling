@@ -46,16 +46,21 @@ type ChatConfig struct {
 	Model string
 	// Timeout bounds a single chat attempt.
 	Timeout time.Duration
+	// ExtraJSON, when set, is parsed as a JSON object and merged
+	// under the request payload — provider-specific options that the
+	// generic ChatRequest does not model (e.g. Z.AI's
+	// {"thinking":{"type":"disabled"}}). Payload fields always win.
+	ExtraJSON string
 }
 
 // chatRequestPayload is the OpenAI chat-completions request body.
 type chatRequestPayload struct {
-	Model          string             `json:"model"`
-	Messages       []chatMessageProp  `json:"messages"`
-	Temperature    float64            `json:"temperature,omitempty"`
-	MaxTokens      int32              `json:"max_tokens,omitempty"`
+	Model          string              `json:"model"`
+	Messages       []chatMessageProp   `json:"messages"`
+	Temperature    float64             `json:"temperature,omitempty"`
+	MaxTokens      int32               `json:"max_tokens,omitempty"`
 	ResponseFormat *responseFormatProp `json:"response_format,omitempty"`
-	Stream         bool               `json:"stream"`
+	Stream         bool                `json:"stream"`
 }
 
 type chatMessageProp struct {
@@ -88,6 +93,7 @@ type openAIProvider struct {
 	defaultEndpoint string
 	defaultAPIKey   string
 	defaultModel    string
+	extraJSON       string
 	client          *http.Client
 }
 
@@ -100,6 +106,7 @@ func newOpenAIProvider(cfg ChatConfig) *openAIProvider {
 		defaultEndpoint: strings.TrimRight(cfg.Endpoint, "/"),
 		defaultAPIKey:   cfg.APIKey,
 		defaultModel:    cfg.Model,
+		extraJSON:       cfg.ExtraJSON,
 		client:          &http.Client{Timeout: timeout},
 	}
 }
@@ -143,9 +150,25 @@ func (p *openAIProvider) Chat(ctx context.Context, req *llminterfacepb.ChatReque
 		payload.ResponseFormat = &responseFormatProp{Type: "json_object"}
 	}
 
-	body, err := json.Marshal(payload)
-	if err != nil {
-		return nil, fmt.Errorf("failed to encode chat request: %w", err)
+	var body []byte
+	if p.extraJSON != "" {
+		merged := map[string]any{}
+		if err := json.Unmarshal([]byte(p.extraJSON), &merged); err == nil {
+			base, _ := json.Marshal(payload)
+			if json.Unmarshal(base, &merged) == nil {
+				body, err = json.Marshal(merged)
+				if err != nil {
+					return nil, fmt.Errorf("failed to encode chat request: %w", err)
+				}
+			}
+		}
+	}
+	if body == nil {
+		var mErr error
+		body, mErr = json.Marshal(payload)
+		if mErr != nil {
+			return nil, fmt.Errorf("failed to encode chat request: %w", mErr)
+		}
 	}
 
 	var lastErr error

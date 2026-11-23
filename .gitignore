@@ -262,3 +262,6 @@ vm/vm.pid
 
 # Test VM disk image
 *.qcow2
+
+# Compiled test binaries
+examples/loadtest/burnapp/burnapp-bin

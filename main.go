@@ -51,6 +51,7 @@ var (
 	llmProviderAPIKey   string
 	llmProviderModel    string
 	llmProviderTimeout  int
+	llmProviderExtra    string
 
 	// Operator options.
 	operatorMetricsAddr    string
@@ -105,10 +106,11 @@ var llminterfaceCmd = &cobra.Command{
 		defer cancel()
 
 		chatCfg := llminterface.ChatConfig{
-			Endpoint: llmProviderEndpoint,
-			APIKey:   llmProviderAPIKey,
-			Model:    llmProviderModel,
-			Timeout:  time.Duration(llmProviderTimeout) * time.Second,
+			Endpoint:  llmProviderEndpoint,
+			APIKey:    llmProviderAPIKey,
+			Model:     llmProviderModel,
+			Timeout:   time.Duration(llmProviderTimeout) * time.Second,
+			ExtraJSON: llmProviderExtra,
 		}
 
 		log.Println("Starting LLM Interface component...")
@@ -224,6 +226,7 @@ func init() {
 	rootCmd.PersistentFlags().StringVar(&llmProviderAPIKey, "llm-provider-api-key", "", "Default LLM provider API key (overrides: LLMPROVIDER_API_KEY env)")
 	rootCmd.PersistentFlags().StringVar(&llmProviderModel, "llm-provider-model", "", "Default LLM provider model name")
 	rootCmd.PersistentFlags().IntVar(&llmProviderTimeout, "llm-provider-timeout", 30, "Per-request LLM timeout in seconds")
+	rootCmd.PersistentFlags().StringVar(&llmProviderExtra, "llm-provider-extra-json", "", "Extra JSON merged under provider request payload (provider-specific options)")
 
 	// Allow env fallback for the API key so secrets stay out of argv
 	if v := os.Getenv("LLMPROVIDER_API_KEY"); v != "" && llmProviderAPIKey == "" {

@@ -364,6 +364,14 @@ spec:
                 description: 'Latest action applied or held: SCALE_UP, SCALE_DOWN,
                   or HOLD.'
                 type: string
+              lastCycleTime:
+                description: |-
+                  Completion time of the last full decision cycle. Event-driven
+                  reconciles (a status write re-triggers) are throttled against it
+                  so the control period is respected even when every cycle changes
+                  the status.
+                format: date-time
+                type: string
               lastRecommendation:
                 description: Outcome of the latest decision cycle.
                 properties:

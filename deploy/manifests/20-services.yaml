@@ -83,7 +83,9 @@ spec:
           # external LLM; point --llm-provider-endpoint at any
           # OpenAI-compatible base URL for real models.
           command: ["/usr/local/bin/llm-autoscaler", "llminterface"]
-          args: ["--llm-provider-endpoint", "mock://"]
+          args:
+            - --llm-provider-endpoint=mock://
+            - --llm-provider-extra-json={"reasoning_effort":"low"}
           ports:
             - containerPort: 50052
               name: grpc

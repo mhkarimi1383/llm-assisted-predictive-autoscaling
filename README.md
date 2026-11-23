@@ -80,10 +80,25 @@ LLMAutoscaler CR ──watch──> Operator (Go, controller-runtime)
 Decisions are auditable end-to-end: votes, verdict reasons, and action history
 live in the resource status; every executed action emits a Kubernetes Event.
 
+## Documentation
+
+- **Architecture** — components, gRPC contracts, data flow, and concurrency
+  mechanisms:
+  [`docs/en/ARCHITECTURE.md`](docs/en/ARCHITECTURE.md) ·
+  [`docs/fa/ARCHITECTURE.md`](docs/fa/ARCHITECTURE.md)
+- **Algorithms** — the full behavioral design (10 algorithms, flowchart +
+  pseudocode each) with implementation-status tables:
+  [`docs/en/ALGORITHMS.md`](docs/en/ALGORITHMS.md) ·
+  [`docs/fa/ALGORITHMS.md`](docs/fa/ALGORITHMS.md)
+- **Evaluation** — load-test comparison of fixed vs HPA vs LLMAutoscaler
+  (GLM-5.3) with the full metric rubric:
+  [`docs/en/EVALUATION.md`](docs/en/EVALUATION.md) ·
+  [`docs/fa/EVALUATION.md`](docs/fa/EVALUATION.md)
+
 ## Algorithms
 
-The full design lives in the algorithm specification — each of the 10
-algorithms pairs a Mermaid flowchart with pseudocode:
+The algorithm specification pairs each of the 10 algorithms with a Mermaid
+flowchart and pseudocode:
 
 - English: [`docs/en/ALGORITHMS.md`](docs/en/ALGORITHMS.md)
 - Persian: [`docs/fa/ALGORITHMS.md`](docs/fa/ALGORITHMS.md)

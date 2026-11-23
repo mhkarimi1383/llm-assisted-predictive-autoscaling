@@ -411,6 +411,12 @@ type LLMAutoscalerStatus struct {
 	// window; the recovery target of Algorithm 9.
 	LastVerifiedHealthyReplicas *int32 `json:"lastVerifiedHealthyReplicas,omitempty"`
 
+	// Completion time of the last full decision cycle. Event-driven
+	// reconciles (a status write re-triggers) are throttled against it
+	// so the control period is respected even when every cycle changes
+	// the status.
+	LastCycleTime *metav1.Time `json:"lastCycleTime,omitempty"`
+
 	// Conditions of the autoscaler (Ready, Degraded, ...).
 	Conditions []metav1.Condition `json:"conditions,omitempty"`
 

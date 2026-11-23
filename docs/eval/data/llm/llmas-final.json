@@ -1,0 +1,138 @@
+{
+    "apiVersion": "autoscaling.karimi.dev/v1alpha1",
+    "kind": "LLMAutoscaler",
+    "metadata": {
+        "annotations": {
+            "kubectl.kubernetes.io/last-applied-configuration": "{\"apiVersion\":\"autoscaling.karimi.dev/v1alpha1\",\"kind\":\"LLMAutoscaler\",\"metadata\":{\"annotations\":{},\"name\":\"burn-llmas\",\"namespace\":\"default\"},\"spec\":{\"dryRun\":false,\"forecast\":{\"provider\":\"stub\"},\"llm\":{\"apiKeySecret\":{\"key\":\"key\",\"name\":\"zai-key\"},\"endpoint\":\"https://api.z.ai/api/paas/v4\",\"model\":\"glm-5.3\"},\"maxReplicas\":7,\"metrics\":{\"provider\":\"metrics-server\"},\"minReplicas\":2,\"reasoning\":{\"analystWeights\":{\"forecast\":1,\"history\":1,\"policy\":1,\"status\":1},\"confidenceThreshold\":0.6,\"quorum\":3,\"timeoutSeconds\":90},\"safety\":{\"cooldownSeconds\":30,\"maxActionsPerHour\":60,\"maxScaleDownPercent\":50,\"maxScaleUpPercent\":100,\"minStepReplicas\":1,\"observationTimeoutSeconds\":180,\"stabilizationWindowSeconds\":60,\"verificationWindowSeconds\":30},\"scaleTargetRef\":{\"kind\":\"Deployment\",\"name\":\"burn\"}}}\n"
+        },
+        "creationTimestamp": "2026-11-23T19:28:02Z",
+        "generation": 1,
+        "name": "burn-llmas",
+        "namespace": "default",
+        "resourceVersion": "56002",
+        "uid": "ac7fedb7-ee2d-446c-b3c5-5045e9baf8a4"
+    },
+    "spec": {
+        "dryRun": false,
+        "forecast": {
+            "provider": "stub"
+        },
+        "llm": {
+            "apiKeySecret": {
+                "key": "key",
+                "name": "zai-key"
+            },
+            "endpoint": "https://api.z.ai/api/paas/v4",
+            "model": "glm-5.3"
+        },
+        "maxReplicas": 7,
+        "metrics": {
+            "provider": "metrics-server"
+        },
+        "minReplicas": 2,
+        "reasoning": {
+            "analystWeights": {
+                "forecast": 1,
+                "history": 1,
+                "policy": 1,
+                "status": 1
+            },
+            "confidenceThreshold": 0.6,
+            "quorum": 3,
+            "timeoutSeconds": 90
+        },
+        "safety": {
+            "cooldownSeconds": 30,
+            "maxActionsPerHour": 60,
+            "maxScaleDownPercent": 50,
+            "maxScaleUpPercent": 100,
+            "minStepReplicas": 1,
+            "observationTimeoutSeconds": 180,
+            "stabilizationWindowSeconds": 60,
+            "verificationWindowSeconds": 30
+        },
+        "scaleTargetRef": {
+            "kind": "Deployment",
+            "name": "burn"
+        }
+    },
+    "status": {
+        "conditions": [
+            {
+                "lastTransitionTime": "2026-11-23T19:44:30Z",
+                "message": "latest decision cycle recorded",
+                "observedGeneration": 1,
+                "reason": "CycleCompleted",
+                "status": "True",
+                "type": "Ready"
+            },
+            {
+                "lastTransitionTime": "2026-11-23T19:30:14Z",
+                "message": "checked target reached and stayed healthy across the verification window",
+                "observedGeneration": 1,
+                "reason": "OperationApplied",
+                "status": "False",
+                "type": "Degraded"
+            }
+        ],
+        "currentReplicas": 4,
+        "lastAction": "HOLD",
+        "lastRecommendation": {
+            "action": "HOLD",
+            "aggregationSummary": "weights[HOLD=3.00, SCALE_DOWN=1.00]; votes: forecast:HOLD@4, status:SCALE_DOWN@2, policy:HOLD@4, history:HOLD@4",
+            "confidence": 0.75,
+            "rationale": "Three of four analysts (forecast, policy, history) voted HOLD, outweighing the lone status SCALE_DOWN vote. Current utilization is well below thresholds (cpu_utilization 0.00018, memory 0.247), but the forecast shows a steady upward CPU trend toward ~0.25, and two recent scale-ups (2-\u003e3-\u003e4) argue against premature scale-down before the new capacity stabilizes.",
+            "requestId": "burn-llmas-1795463063",
+            "target": 4,
+            "votes": [
+                {
+                    "action": "HOLD",
+                    "confidence": 0.85,
+                    "rationale": "Forecast shows only a mild upward drift in predicted CPU (0.242 to 0.253) and memory (0.487 to 0.499) over the horizon with no spikes; current 4 replicas appear sufficient.",
+                    "role": "forecast",
+                    "target": 4
+                },
+                {
+                    "action": "SCALE_DOWN",
+                    "confidence": 0.8,
+                    "rationale": "CPU utilization is ~0.0002 and memory utilization is ~0.247 with all 4 pods ready and none pending or terminating, indicating minimal pressure well below the recent scale-ups.",
+                    "role": "status",
+                    "target": 2
+                },
+                {
+                    "action": "HOLD",
+                    "confidence": 0.85,
+                    "rationale": "Current replicas 4 sit within the allowed range [2, 7] and a SCALE_UP occurred only ~246s ago (1795462817), so cooldown/stabilization argues against immediate movement. Forecast CPU rises only gradually to ~0.253, well below any level demanding scale-out, and no constraint requires change.",
+                    "role": "policy",
+                    "target": 4
+                },
+                {
+                    "action": "HOLD",
+                    "confidence": 0.85,
+                    "rationale": "Recent actions show two monotonic scale-ups (2→3 at 1795462168, 3→4 at 1795462817) with no reversals or oscillation; the system recently settled at 4 replicas, so holding avoids unnecessary churn.",
+                    "role": "history",
+                    "target": 4
+                }
+            ]
+        },
+        "lastScaleTime": "2026-11-23T19:40:17Z",
+        "lastVerifiedHealthyReplicas": 4,
+        "observedGeneration": 1,
+        "recentActions": [
+            {
+                "action": "SCALE_UP",
+                "fromReplicas": 2,
+                "requestId": "burn-llmas-1795462159",
+                "time": "2026-11-23T19:29:28Z",
+                "toReplicas": 3
+            },
+            {
+                "action": "SCALE_UP",
+                "fromReplicas": 3,
+                "requestId": "burn-llmas-1795462810",
+                "time": "2026-11-23T19:40:17Z",
+                "toReplicas": 4
+            }
+        ]
+    }
+}

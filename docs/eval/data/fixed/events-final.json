@@ -1,0 +1,251 @@
+{
+    "apiVersion": "v1",
+    "items": [
+        {
+            "apiVersion": "v1",
+            "eventTime": null,
+            "firstTimestamp": null,
+            "involvedObject": {
+                "kind": "Deployment",
+                "name": "burn",
+                "namespace": "default"
+            },
+            "kind": "Event",
+            "lastTimestamp": null,
+            "message": "LLM autoscaler scaled replicas from 3 to 4 (request burn-llmas-1795462810)",
+            "metadata": {
+                "creationTimestamp": "2026-11-23T19:40:17Z",
+                "generateName": "llm-autoscaler-",
+                "name": "llm-autoscaler-r6htp",
+                "namespace": "default",
+                "resourceVersion": "55555",
+                "uid": "08707737-f837-4e71-8000-3630199fecb1"
+            },
+            "reason": "ScalingUp",
+            "reportingComponent": "",
+            "reportingInstance": "",
+            "source": {
+                "component": "llm-autoscaler"
+            },
+            "type": "Normal"
+        },
+        {
+            "apiVersion": "v1",
+            "eventTime": null,
+            "firstTimestamp": null,
+            "involvedObject": {
+                "kind": "Deployment",
+                "name": "burn",
+                "namespace": "default"
+            },
+            "kind": "Event",
+            "lastTimestamp": null,
+            "message": "LLM autoscaler scaled replicas from 2 to 3 (request burn-llmas-1795462159)",
+            "metadata": {
+                "creationTimestamp": "2026-11-23T19:29:29Z",
+                "generateName": "llm-autoscaler-",
+                "name": "llm-autoscaler-t7szp",
+                "namespace": "default",
+                "resourceVersion": "54390",
+                "uid": "f2a23110-0dea-4ff6-90b3-db58605837ff"
+            },
+            "reason": "ScalingUp",
+            "reportingComponent": "",
+            "reportingInstance": "",
+            "source": {
+                "component": "llm-autoscaler"
+            },
+            "type": "Normal"
+        },
+        {
+            "apiVersion": "v1",
+            "count": 1,
+            "eventTime": null,
+            "firstTimestamp": "2026-11-23T19:20:04Z",
+            "involvedObject": {
+                "apiVersion": "apps/v1",
+                "kind": "Deployment",
+                "name": "burn",
+                "namespace": "default",
+                "resourceVersion": "53490",
+                "uid": "15e4f9ec-af37-4bfa-a885-78310bcd12d0"
+            },
+            "kind": "Event",
+            "lastTimestamp": "2026-11-23T19:20:04Z",
+            "message": "Scaled down replica set burn-86d79fc9fc from 7 to 4",
+            "metadata": {
+                "creationTimestamp": "2026-11-23T19:20:04Z",
+                "name": "burn.18eac2d10dae65e2",
+                "namespace": "default",
+                "resourceVersion": "53494",
+                "uid": "b9f56e63-dc1c-4da4-9ac9-3c50007e92d1"
+            },
+            "reason": "ScalingReplicaSet",
+            "reportingComponent": "deployment-controller",
+            "reportingInstance": "",
+            "source": {
+                "component": "deployment-controller"
+            },
+            "type": "Normal"
+        },
+        {
+            "apiVersion": "v1",
+            "count": 1,
+            "eventTime": null,
+            "firstTimestamp": "2026-11-23T19:20:19Z",
+            "involvedObject": {
+                "apiVersion": "apps/v1",
+                "kind": "Deployment",
+                "name": "burn",
+                "namespace": "default",
+                "resourceVersion": "53530",
+                "uid": "15e4f9ec-af37-4bfa-a885-78310bcd12d0"
+            },
+            "kind": "Event",
+            "lastTimestamp": "2026-11-23T19:20:19Z",
+            "message": "Scaled down replica set burn-86d79fc9fc from 4 to 3",
+            "metadata": {
+                "creationTimestamp": "2026-11-23T19:20:19Z",
+                "name": "burn.18eac2d48d17e4cd",
+                "namespace": "default",
+                "resourceVersion": "53534",
+                "uid": "b86c0828-ca27-4a2e-a94b-485124605a57"
+            },
+            "reason": "ScalingReplicaSet",
+            "reportingComponent": "deployment-controller",
+            "reportingInstance": "",
+            "source": {
+                "component": "deployment-controller"
+            },
+            "type": "Normal"
+        },
+        {
+            "apiVersion": "v1",
+            "count": 1,
+            "eventTime": null,
+            "firstTimestamp": "2026-11-23T19:23:19Z",
+            "involvedObject": {
+                "apiVersion": "apps/v1",
+                "kind": "Deployment",
+                "name": "burn",
+                "namespace": "default",
+                "resourceVersion": "53818",
+                "uid": "15e4f9ec-af37-4bfa-a885-78310bcd12d0"
+            },
+            "kind": "Event",
+            "lastTimestamp": "2026-11-23T19:23:19Z",
+            "message": "Scaled down replica set burn-86d79fc9fc from 3 to 2",
+            "metadata": {
+                "creationTimestamp": "2026-11-23T19:23:19Z",
+                "name": "burn.18eac2fe8127c6ba",
+                "namespace": "default",
+                "resourceVersion": "53822",
+                "uid": "2cb9e281-699f-412e-b123-055a4d108433"
+            },
+            "reason": "ScalingReplicaSet",
+            "reportingComponent": "deployment-controller",
+            "reportingInstance": "",
+            "source": {
+                "component": "deployment-controller"
+            },
+            "type": "Normal"
+        },
+        {
+            "apiVersion": "v1",
+            "count": 1,
+            "eventTime": null,
+            "firstTimestamp": "2026-11-23T19:29:29Z",
+            "involvedObject": {
+                "apiVersion": "apps/v1",
+                "kind": "Deployment",
+                "name": "burn",
+                "namespace": "default",
+                "resourceVersion": "54389",
+                "uid": "15e4f9ec-af37-4bfa-a885-78310bcd12d0"
+            },
+            "kind": "Event",
+            "lastTimestamp": "2026-11-23T19:29:29Z",
+            "message": "Scaled up replica set burn-86d79fc9fc from 2 to 3",
+            "metadata": {
+                "creationTimestamp": "2026-11-23T19:29:29Z",
+                "name": "burn.18eac3548883649a",
+                "namespace": "default",
+                "resourceVersion": "54392",
+                "uid": "97c8e4ed-7743-4cbe-a070-33a3354dea09"
+            },
+            "reason": "ScalingReplicaSet",
+            "reportingComponent": "deployment-controller",
+            "reportingInstance": "",
+            "source": {
+                "component": "deployment-controller"
+            },
+            "type": "Normal"
+        },
+        {
+            "apiVersion": "v1",
+            "count": 1,
+            "eventTime": null,
+            "firstTimestamp": "2026-11-23T19:40:17Z",
+            "involvedObject": {
+                "apiVersion": "apps/v1",
+                "kind": "Deployment",
+                "name": "burn",
+                "namespace": "default",
+                "resourceVersion": "55553",
+                "uid": "15e4f9ec-af37-4bfa-a885-78310bcd12d0"
+            },
+            "kind": "Event",
+            "lastTimestamp": "2026-11-23T19:40:17Z",
+            "message": "Scaled up replica set burn-86d79fc9fc from 3 to 4",
+            "metadata": {
+                "creationTimestamp": "2026-11-23T19:40:17Z",
+                "name": "burn.18eac3eb6f48feb6",
+                "namespace": "default",
+                "resourceVersion": "55556",
+                "uid": "36c0cd67-f381-44f1-9374-79d3384af7a6"
+            },
+            "reason": "ScalingReplicaSet",
+            "reportingComponent": "deployment-controller",
+            "reportingInstance": "",
+            "source": {
+                "component": "deployment-controller"
+            },
+            "type": "Normal"
+        },
+        {
+            "apiVersion": "v1",
+            "count": 1,
+            "eventTime": null,
+            "firstTimestamp": "2026-11-23T19:58:26Z",
+            "involvedObject": {
+                "apiVersion": "apps/v1",
+                "kind": "Deployment",
+                "name": "burn",
+                "namespace": "default",
+                "resourceVersion": "57427",
+                "uid": "15e4f9ec-af37-4bfa-a885-78310bcd12d0"
+            },
+            "kind": "Event",
+            "lastTimestamp": "2026-11-23T19:58:26Z",
+            "message": "Scaled down replica set burn-86d79fc9fc from 4 to 2",
+            "metadata": {
+                "creationTimestamp": "2026-11-23T19:58:26Z",
+                "name": "burn.18eac4e91ce89857",
+                "namespace": "default",
+                "resourceVersion": "57435",
+                "uid": "d7652fdc-0cf9-4c6d-9e9c-aefef8dbd2a8"
+            },
+            "reason": "ScalingReplicaSet",
+            "reportingComponent": "deployment-controller",
+            "reportingInstance": "",
+            "source": {
+                "component": "deployment-controller"
+            },
+            "type": "Normal"
+        }
+    ],
+    "kind": "List",
+    "metadata": {
+        "resourceVersion": ""
+    }
+}

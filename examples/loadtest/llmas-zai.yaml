@@ -1,0 +1,45 @@
+# LLMAutoscaler mode: real LLM (Z.AI glm-5.3) or mock (via run-mode.sh sed).
+# Bounds mirror the HPA mode (2–7). Cooldown lowered to 30 s so the 60 s
+# control period is the limiting factor; verification/observation windows
+# shortened for the 12-minute experiment.
+---
+apiVersion: autoscaling.karimi.dev/v1alpha1
+kind: LLMAutoscaler
+metadata:
+  name: burn-llmas
+  namespace: default
+spec:
+  scaleTargetRef:
+    kind: Deployment
+    name: burn
+  minReplicas: 2
+  maxReplicas: 7
+  dryRun: false
+  llm:
+    endpoint: "https://api.z.ai/api/paas/v4"
+    model: "glm-5.3"
+    apiKeySecret:
+      name: zai-key
+      key: key
+  reasoning:
+    quorum: 3
+    confidenceThreshold: 0.6
+    timeoutSeconds: 90
+    analystWeights:
+      forecast: 1.0
+      status: 1.0
+      policy: 1.0
+      history: 1.0
+  safety:
+    cooldownSeconds: 30
+    maxScaleUpPercent: 100
+    maxScaleDownPercent: 50
+    minStepReplicas: 1
+    stabilizationWindowSeconds: 60
+    verificationWindowSeconds: 30
+    observationTimeoutSeconds: 180
+    maxActionsPerHour: 60
+  metrics:
+    provider: metrics-server
+  forecast:
+    provider: stub

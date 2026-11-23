@@ -1,0 +1,50 @@
+# Load-test target: CPU-burning HTTP service.
+# CPU request 500m is the HPA utilization basis; 50ms burn per request
+# means ~10 rps/pod = 100% of request.
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: burn
+  namespace: default
+  labels:
+    app: burn
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: burn
+  template:
+    metadata:
+      labels:
+        app: burn
+    spec:
+      containers:
+        - name: app
+          image: burn-app:dev
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: BURN_MS
+              value: "50"
+          resources:
+            requests: { cpu: 500m, memory: 64Mi }
+            limits: { cpu: 1500m, memory: 256Mi }
+          readinessProbe:
+            httpGet: { path: /healthz, port: 8080 }
+            initialDelaySeconds: 2
+          ports:
+            - containerPort: 8080
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: burn
+  namespace: default
+spec:
+  type: NodePort
+  selector:
+    app: burn
+  ports:
+    - port: 8080
+      targetPort: 8080
+      nodePort: 30080

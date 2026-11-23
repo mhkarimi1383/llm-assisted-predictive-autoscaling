@@ -110,6 +110,18 @@ func (r *LLMAutoscalerReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 		return r.observePending(cycleCtx, &scaler, &deployment, status, op, logger)
 	}
 
+	// --- Control-period throttle ---
+	// A status write re-triggers reconciliation event-driven; without
+	// this gate a workload whose status changes every cycle (e.g. an
+	// LLM returning slightly different votes) would run a tight
+	// reconcile loop instead of the configured control period.
+	if t := scaler.Status.LastCycleTime; t != nil {
+		elapsed := time.Since(t.Time)
+		if elapsed < requeue {
+			return ctrl.Result{RequeueAfter: requeue - elapsed}, nil
+		}
+	}
+
 	// --- Scaling ownership lock (Algorithm 1) ---
 	acquired, err := r.Ownership.Acquire(ctx, scaler.Namespace, target.Name)
 	if err != nil {
@@ -571,7 +583,10 @@ func (r *LLMAutoscalerReconciler) commitStatus(
 ) error {
 	old := scaler.Status.DeepCopy()
 	old.LastRecommendation.RequestID = ""
+	old.LastCycleTime = nil
 
+	now := metav1.NewTime(time.Now())
+	status.LastCycleTime = &now
 	scaler.Status = *status
 	ready := metav1.ConditionTrue
 	reason := "CycleCompleted"
@@ -591,7 +606,12 @@ func (r *LLMAutoscalerReconciler) commitStatus(
 
 	status.LastRecommendation.RequestID = ""
 
-	if reflect.DeepEqual(*old, scaler.Status) {
+	// LastCycleTime intentionally excluded from the comparison: it
+	// differs every cycle, and persisting it is exactly what keeps
+	// the reconcile loop throttled to the control period.
+	oldCopy, newCopy := *old, scaler.Status
+	oldCopy.LastCycleTime, newCopy.LastCycleTime = nil, nil
+	if reflect.DeepEqual(oldCopy, newCopy) {
 		return nil
 	}
 	return r.Status().Update(ctx, scaler)

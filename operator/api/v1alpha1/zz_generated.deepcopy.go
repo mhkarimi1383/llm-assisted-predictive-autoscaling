@@ -180,6 +180,10 @@ func (in *LLMAutoscalerStatus) DeepCopyInto(out *LLMAutoscalerStatus) {
 		*out = new(int32)
 		**out = **in
 	}
+	if in.LastCycleTime != nil {
+		in, out := &in.LastCycleTime, &out.LastCycleTime
+		*out = (*in).DeepCopy()
+	}
 	if in.Conditions != nil {
 		in, out := &in.Conditions, &out.Conditions
 		*out = make([]v1.Condition, len(*in))
